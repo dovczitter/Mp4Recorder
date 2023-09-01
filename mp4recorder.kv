@@ -1,0 +1,82 @@
+<Mp4Recorder>:
+
+    MDBoxLayout:
+        orientation:'vertical'
+        spacing: "20dp"
+        
+        MDLabel:
+            id: time_label
+            text: '00:00:00'
+            font_size: 24
+            color: "orange"
+            halign: "left"
+            size_hint: 1, .2
+
+        MDRaisedButton:
+            id: record_button
+            text: "START Recording"
+            font_size: 24
+            halign: "center"
+            size_hint: 0.75, 0.25
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            on_release: root.record()
+
+        MDRaisedButton:
+            id: email_button
+            text: 'Email'
+            font_size: 24
+            halign: "center"
+            size_hint: 0.75, 0.25
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            on_release: root.email()
+
+        MDRaisedButton:
+            id: emailfile_button
+            text: 'Email File'
+            font_size: 24
+            halign: "center"
+            size_hint: 0.75, 0.25
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            on_release: root.emailfile()                
+
+        MDRaisedButton:
+            id: exit_button
+            text: 'Exit'
+            font_size: 24
+            halign: "center"
+            size_hint: 0.75, 0.25
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            on_release: root.exit()
+
+        MDScrollView:
+            MDList:
+                pos_hint: {"x":0, "top":1}
+                id: container
+
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+
+        FileChooser:
+            id: filechooser
+            path: "."
+            sort_func: root.default_sort_func
+            FileChooserListLayout
+
+        MDBoxLayout:
+            size_hint_y: None
+            height: 30
+
+            Button:
+                id: emailfile_button
+                text: "EmailFile"
+                font_size: 24
+                on_release: root.emailfile(filechooser.path, filechooser.selection)
+                
+            Button:
+                id: cancel_button
+                font_size: 24
+                text: "Cancel"
+                on_release: root.cancel()

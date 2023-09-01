@@ -1,0 +1,9 @@
+.alpackages
+.vscode
+*.app
+.buildozer
+bin
+.venv
+save
+*.html
+*.pdf

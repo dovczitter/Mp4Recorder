@@ -1,0 +1,31 @@
+#
+# === Mp4Recorder.csv ===
+#    <key>,<value> pair
+#
+
+# --------------------------------------
+# Recorded file base filename:
+# --------------------------------------
+BaseFilename,Mp4RecorderTest
+
+# --------------------------------------
+# Email:
+# Requires an 'outlook' account on the tablet, use PlayStore
+# --------------------------------------
+
+# Outlook host and port
+Host,smtp-mail.outlook.com
+Port,587
+
+# Outlook login username:
+Username,myusername@outlook.com
+
+# Outlook login password:
+Password,@Mypassword
+
+# Outlook email 'From':
+From,myusername@outlook.com
+
+# Outlook email 'To' list:
+# No spaces.
+To,myusername@outlook.com,buddy1@addr1.com,buddy2@addr2.com,
