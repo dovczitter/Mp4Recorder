@@ -21,6 +21,7 @@ from recorder import Recorder
 mp4Recorder = ''
 loadFilename = ''
 emailFileMsg = ''
+wifiAlert = 0
       
 # ============================================
 #               Mp4Recorder
@@ -105,6 +106,7 @@ class Mp4Recorder(MDBoxLayout):
     def timer(self, *args):
         global loadFilename
         global emailFileMsg
+        global wifiAlert
 
         time_str = f'Mp4Recorder [{time.asctime()}]'
         chk = ''
@@ -114,7 +116,11 @@ class Mp4Recorder(MDBoxLayout):
             self.ids.time_label.color = "orange"
         else:
             chk = '- DN -'
-            self.ids.time_label.color = "yellow"
+            wifiAlert = wifiAlert + 1
+            if (wifiAlert % 2) == 0:
+                self.ids.time_label.color = "white"
+            else:
+                self.ids.time_label.color = "red"
 
         wifi_str = f'Wifi {chk}'
         self.ids.time_label.text = f'{time_str} - [{wifi_str}]'

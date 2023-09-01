@@ -224,6 +224,7 @@ class Recorder():
         from os.path import exists
         import traceback
 
+        print(f'========= send_email: [{filename}] ==============')
         if filename == None or not exists(filename):
             return f' Error: [{filename}] does not exist.'
         
