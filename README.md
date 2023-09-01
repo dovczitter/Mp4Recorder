@@ -1,6 +1,6 @@
-# 1. Mp3Recorder, Python demo project
+# 1. Mp4Recorder, Python demo project
 
-Android 11 Python app to record and email mp3 files.
+Android 11 Python app to record and email mp4 files.
 
 # 2. Design and component review
 
@@ -8,21 +8,21 @@ Android 11 Python app to record and email mp3 files.
     - User buttons drive Record, Email, EmailFile and Exit.
     - Timed log activity updates.
 
-========== Mp3Recorder Main Screen [*Wifi UP*] [*Info log*] ========== 
+========== Mp4Recorder Main Screen [*Wifi UP*] [*Info log*] ========== 
 ![Main Screen](/screenshots/MainScrn.png)
 
-========== Mp3Recorder Email File popup screen ========== 
+========== Mp4Recorder Email File popup screen ========== 
 ![EmailFile Screen](/screenshots/EmailFileScrn.png)
 
 
 # 3. Useage
     - [START Recording] changes to [STOP Recording],say something to record.
-    - [STOP Recording] stops the recording and changes back to [START Recording] for the next recording, log shows Mp3Recorder_<datestamp>.mp3 recorded file
-    - [Email] will email the current recorded file to the Mp3Recorder.csv 'Receiver' list.
+    - [STOP Recording] stops the recording and changes back to [START Recording] for the next recording, log shows Mp4Recorder_<datestamp>.mp4 recorded file
+    - [Email] will email the current recorded file to the Mp4Recorder.csv 'Receiver' list.
     - [Email File] brings up a popup list of previously recorded files, tap/highlight the requested file, tap [EmailFile] to email, [Cancel] to return to main screen.
     - [Exit] quit the app.
-# 4. Buid Mp3Recorder.apk
-    - Android app, Mp3Recorder.apk, is created by Buildozer on Linux
+# 4. Buid Mp4Recorder.apk
+    - Android app, Mp4Recorder.apk, is created by Buildozer on Linux
     - Install Unbutu Linux on Windows: 
         <https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-11-with-gui-support#1-overview>
         <https://stackoverflow.com/questions/28210637/unable-to-ssh-localhost-permission-denied-publickey-connection-closed-by>
@@ -56,13 +56,13 @@ Android 11 Python app to record and email mp3 files.
         Visual Code->Terminal->New Terminal.
     
         $ virtualenv .venv
-        dovczitter@DESKTOP-N4F7Q65:~/Mp3Recorder$ source .venv/bin/activate
-        (.venv) dovczitter@DESKTOP-N4F7Q65:~/Mp3Recorder$
+        dovczitter@DESKTOP-N4F7Q65:~/Mp4Recorder$ source .venv/bin/activate
+        (.venv) dovczitter@DESKTOP-N4F7Q65:~/Mp4Recorder$
         To create a new buildozer.spec file,run
         $ buildozer init
         Otherwise, use the one buildozer.spec in gitHub, or edit the new one line by line.
 
-        Assuming *.py, *.csv, *.png and .gitignore are installed, to generate the bin/Mp3Reorder.apk, run:
+        Assuming *.py, *.csv, *.png and .gitignore are installed, to generate the bin/Mp4Reorder.apk, run:
         $  buildozer -v android debug 
         First build will take many minutes, must see the ending 'BUILD SUCCESSFUL' to generate an apk.
         Next build should be less than a minute, to fully rebuild, 'rm -rf .bin'.
@@ -75,12 +75,12 @@ Android 11 Python app to record and email mp3 files.
     - Install PlayStore 'OutLook' free, create and save your new email username and password.
     - Enable tablet for debug mode, which allows for direct usb
         <https://www.youtube.com/watch?v=CCFMai4JmeM>
-    - File transfer the Mp3Recorder.apk to the Android 'Downloads' folder
+    - File transfer the Mp4Recorder.apk to the Android 'Downloads' folder
       NOTE - Windows explorer to the tablet's 'Internal shared storage' on connecting the usb in DEBUG mode.
     - Enable the tablet's Wifi.
-    - Suggest that you edit the Mp3Recorder.csv file and copy via explore to the tablet's 'Main storage > Documents > Mp3Recorder' folder.
+    - Suggest that you edit the Mp4Recorder.csv file and copy via explore to the tablet's 'Main storage > Documents > Mp4Recorder' folder.
     - Requires a tablet 'outlook' account, install via PlayStore.
-    - Mp3Recorder.csv configuration, <key>,<value>:
+    - Mp4Recorder.csv configuration, <key>,<value>:
         - Outlook host and port:
             Host,smtp-mail.outlook.com
             Port,587
@@ -94,19 +94,19 @@ Android 11 Python app to record and email mp3 files.
         - wip - requires both yahoo and outlook, may be a bug or outlook requirement.
             Receiver,myusername@outlook.com,buddy1@addr1.com,buddy2@addr2.com,
         - Recorded base filename:
-            Mp3FileRoot,Mp3RecorderTest
+            Mp4FileRoot,Mp4RecorderTest
 
-    - Run the app via 'File Magager +', then 'Downloads', tap the mp3recorderapp.apk file
+    - Run the app via 'File Magager +', then 'Downloads', tap the mp4recorderapp.apk file
     - Choose 'Install'
     - Choose 'Open'
     - If all works, the app comes up, top line shows per-second update, and [Wifi *UP*] if enabled.
-    - Nice to do, would be the enable premission 'Allow management of all files'. Could not get the app to do this automatically. Requirement to access 'Main storage > Documents > Mp3Recorder > Mp3Recorder.csv' file. This file loaded from the apk install, programically moved to the Documents folder if not present, allows for external Mp3Recorder.csv configuration updates.
+    - Nice to do, would be the enable premission 'Allow management of all files'. Could not get the app to do this automatically. Requirement to access 'Main storage > Documents > Mp4Recorder > Mp4Recorder.csv' file. This file loaded from the apk install, programically moved to the Documents folder if not present, allows for external Mp4Recorder.csv configuration updates.
 
     Two configuration choices:
-        - builddozer with modified Mp3Recorder.csv
-        - delete 'Main storage > Documents > Mp3Recorder > Mp3Recorder.csv'
-        - Uninstall current [File Manager > Apps > Mp3Recorder | UNINSTALL]
-        - Install new Mp3Recorder.apk via 'File Manager +'
+        - builddozer with modified Mp4Recorder.csv
+        - delete 'Main storage > Documents > Mp4Recorder > Mp4Recorder.csv'
+        - Uninstall current [File Manager > Apps > Mp4Recorder | UNINSTALL]
+        - Install new Mp4Recorder.apk via 'File Manager +'
     -or-
         - 'Allow management of all files', see above
-        - USB copy Windows edited Mp3Recorder.csv to the tables 'Internal shared storage\Documents\Mp3Recorder\Mp3Recorder.csv' 
+        - USB copy Windows edited Mp4Recorder.csv to the tables 'Internal shared storage\Documents\Mp4Recorder\Mp4Recorder.csv' 

@@ -12,7 +12,7 @@
 
     - github repo:
 
-    <https://github.com/dovczitter/Mp4Recorder-Python>
+    <https://github.com/dovczitter/Mp4Recorder>
 
 - Python classes:
 
