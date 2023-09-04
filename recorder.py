@@ -190,6 +190,8 @@ class Recorder():
 
     # ----------------- get_mp4_filename ------------------------ #
     def get_mp4_filename(self):
+        if self.mp4_filename == '':
+            return self.mp4Fn
         return self.mp4_filename
 
     # ----------------- get_mp4_path ------------------------ #

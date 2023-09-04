@@ -15,7 +15,7 @@ package.domain = mp4recorderapp
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,csv,mp4
+source.include_exts = py,png,jpg,kv,atlas,csv,mp4,spec
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -32,7 +32,7 @@ source.exclude_dirs = tests, bin, venv, .venv, save*
 
 # ============================================================================================
 # (str) Application versioning (method 1)
-version = 1.1
+version = 1.4
 # ============================================================================================
 
 # (str) Application versioning (method 2)

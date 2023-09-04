@@ -21,8 +21,13 @@ from recorder import Recorder
 mp4Recorder = ''
 loadFilename = ''
 emailFileMsg = ''
-wifiAlert = 0
-      
+wifiBlink = False
+recordSeconds = 0
+mp4Version = '1.3'
+
+# camera: https://kivy.org/doc/stable/examples/gen__camera__main__py.html
+# video recorder: https://stackoverflow.com/questions/62063847/is-there-a-way-to-record-videos-in-kivy
+  
 # ============================================
 #               Mp4Recorder
 # ============================================
@@ -39,6 +44,7 @@ class Mp4Recorder(MDBoxLayout):
         global mp4Recorder
         
         super(Mp4Recorder, self).__init__(**kwargs)
+        
         #
         # 'request_permissions' first, waits in background until 'permissions_external_storage'
         # is complete. Then allows for the request respons, then continues with kivy. 
@@ -100,30 +106,56 @@ class Mp4Recorder(MDBoxLayout):
                     "android.app.Activity", PythonActivity.mActivity
                     )
                     currentActivity.startActivityForResult(intent, 101) 
+                    
     #
     # -------- timer -------
     #
     def timer(self, *args):
         global loadFilename
         global emailFileMsg
-        global wifiAlert
+        global wifiBlink
+        global recordSeconds
+        global mp4Version
 
-        time_str = f'Mp4Recorder [{time.asctime()}]'
+        from time import gmtime, strftime
+        from datetime import datetime, timezone
+        
         chk = ''
         # -------- TODO - log transition ----------- 
+        # -------- wifi -----------
         if self.wifiCheck():
             chk = '* UP *'
             self.ids.time_label.color = "orange"
         else:
             chk = '- DN -'
-            wifiAlert = wifiAlert + 1
-            if (wifiAlert % 2) == 0:
+            if wifiBlink:
                 self.ids.time_label.color = "white"
+                wifiBlink = False                
             else:
                 self.ids.time_label.color = "red"
-
+                wifiBlink = True
         wifi_str = f'Wifi {chk}'
-        self.ids.time_label.text = f'{time_str} - [{wifi_str}]'
+        time_str = f'''[Mp4Recorder {mp4Version}]\n[{time.asctime()}]'''
+        
+        # -------- record -----------
+        if self.state == 'recording':
+            # Regular time convert routines generate timezone issues
+            # Decided to do this with simple per second math.
+            recordSeconds = recordSeconds + 1
+            
+            hrs = int(recordSeconds / 3600)
+            min = int(recordSeconds / 60)
+            sec = int(recordSeconds - (hrs*3600 + min*60))
+            
+            diffStr = f'{hrs:02d}:{min:02d}:{sec:02d}'
+            
+            mp4Fn = mp4Recorder.get_mp4_filename()
+            
+            time_str = f'''[{mp4Fn}]\n[RecordingTime: {diffStr}]'''
+        else:
+            recordSeconds = 0           
+            
+        self.ids.time_label.text = f'''{time_str}\n[{wifi_str}]'''
         
         if exists(loadFilename):
             self.update_labels()
