@@ -10,6 +10,7 @@ Android 11 Python app to record and email mp4 files.
 
 ========== Mp4Recorder Main Screen [*Wifi UP*] [*Info log*] ========== 
 ![Main Screen](/screenshots/MainScrn.png)
+![Main Recording Screen](/screenshots/MainScrnRecording.png)
 
 ========== Mp4Recorder Email File popup screen ========== 
 ![EmailFile Screen](/screenshots/EmailFileScrn.png)
