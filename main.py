@@ -23,7 +23,7 @@ loadFilename = ''
 emailFileMsg = ''
 wifiBlink = False
 recordSeconds = 0
-mp4Version = '1.3'
+mp4Version = '1.5'
 
 # camera: https://kivy.org/doc/stable/examples/gen__camera__main__py.html
 # video recorder: https://stackoverflow.com/questions/62063847/is-there-a-way-to-record-videos-in-kivy

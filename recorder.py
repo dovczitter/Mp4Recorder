@@ -25,6 +25,12 @@ class Recorder():
 # https://stackoverflow.com/questions/4886365/androidhow-to-get-media-recorder-output-in-mp3-format
 # https://pypi.org/project/PythonVideoConverter/
 # https://dev.to/dheerajprogrammer/mp4-to-mp3-converter-in-python-5eba
+# https://stackoverflow.com/questions/31478137/capturing-video-from-android-smartphone-using-opencv-python
+# https://www.youtube.com/watch?v=PwUWtfk2inQ
+
+# dovczitter@DESKTOP-N4F7Q65:~/Mp4Recorder$ hostname -I
+# 172.30.155.157 
+# dovczitter@DESKTOP-N4F7Q65:~/Mp4Recorder$ 
 
 # This one looks the best....
 # https://webcodespace.com/how-to-convert-mp4-to-mp3-using-python/
