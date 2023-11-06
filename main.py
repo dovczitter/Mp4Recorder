@@ -23,7 +23,9 @@ loadFilename = ''
 emailFileMsg = ''
 wifiBlink = False
 recordSeconds = 0
-mp4Version = '1.5'
+mp4Version = '1.9'
+blink_record_button = False
+email_ok2send = False
 
 # camera: https://kivy.org/doc/stable/examples/gen__camera__main__py.html
 # video recorder: https://stackoverflow.com/questions/62063847/is-there-a-way-to-record-videos-in-kivy
@@ -107,15 +109,17 @@ class Mp4Recorder(MDBoxLayout):
                     )
                     currentActivity.startActivityForResult(intent, 101) 
                     
-    #
-    # -------- timer -------
-    #
+    # ---------------------------------------------
+    #                   timer
+    # ---------------------------------------------
     def timer(self, *args):
         global loadFilename
         global emailFileMsg
         global wifiBlink
         global recordSeconds
         global mp4Version
+        global blink_record_button
+        global email_ok2send
 
         from time import gmtime, strftime
         from datetime import datetime, timezone
@@ -126,8 +130,10 @@ class Mp4Recorder(MDBoxLayout):
         if self.wifiCheck():
             chk = '* UP *'
             self.ids.time_label.color = "orange"
+            email_ok2send = True
         else:
             chk = '- DN -'
+            email_ok2send = False
             if wifiBlink:
                 self.ids.time_label.color = "white"
                 wifiBlink = False                
@@ -138,6 +144,7 @@ class Mp4Recorder(MDBoxLayout):
         time_str = f'''[Mp4Recorder {mp4Version}]\n[{time.asctime()}]'''
         
         # -------- record -----------
+        
         if self.state == 'recording':
             # Regular time convert routines generate timezone issues
             # Decided to do this with simple per second math.
@@ -152,11 +159,29 @@ class Mp4Recorder(MDBoxLayout):
             mp4Fn = mp4Recorder.get_mp4_filename()
             
             time_str = f'''[{mp4Fn}]\n[RecordingTime: {diffStr}]'''
+
+            if blink_record_button :
+                blink_record_button = False
+                self.ids.record_button.color = "orange"
+            else:
+                blink_record_button = True
+                self.ids.record_button.color = "red"
         else:
             recordSeconds = 0           
             
         self.ids.time_label.text = f'''{time_str}\n[{wifi_str}]'''
         
+        if email_ok2send:
+            self.ids.email_button.color = "orange"
+            self.ids.email_button.text = "Email"
+            self.ids.emailfile_button.color = "orange"
+            self.ids.emailfile_button.text = "Email File"
+        else:
+            self.ids.email_button.color = "red"
+            self.ids.email_button.text = "No Email"
+            self.ids.emailfile_button.color = "red"
+            self.ids.emailfile_button.text = "No Email File"
+
         if exists(loadFilename):
             self.update_labels()
     #
@@ -173,7 +198,7 @@ class Mp4Recorder(MDBoxLayout):
         # https://github.com/kyan001/ping3
         # UP rsp : 0.016164541244506836
         # DN rsp : None
-        rsp = ping('google.com')
+        rsp = ping('google.com', timeout=1)
         return isinstance(rsp, float)
     #
     # -------- LogMessage ------- WIP -----
@@ -205,14 +230,16 @@ class Mp4Recorder(MDBoxLayout):
     # ======================
     def email(self):
         global mp4Recorder
+        global email_ok2send
 
         msg = ''
         if self.state != 'ready':
             msg = 'Recording in progress.'
         else:
-            recordFilename = mp4Recorder.get_mp4_filename()
-            print(f'================= recordFilename [{recordFilename}] ====================')
-            msg = mp4Recorder.email(recordFilename)
+            if email_ok2send:
+                recordFilename = mp4Recorder.get_mp4_filename()
+                print(f'================= recordFilename [{recordFilename}] ====================')
+                msg = mp4Recorder.email(recordFilename)
         
         self.LogMessage(msg)
         

@@ -13,9 +13,15 @@ BaseFilename,Mp4RecorderTest
 # Requires an 'outlook' account on the tablet, use PlayStore
 # --------------------------------------
 
+# === Outlook ===
 # Outlook host and port
 Host,smtp-mail.outlook.com
 Port,587
+
+# === Yahoo ===
+# Yahoo host and port
+# Host,smtp-mail.yahoo.com
+# Port,587
 
 # Outlook login username:
 Username,myusername@outlook.com
