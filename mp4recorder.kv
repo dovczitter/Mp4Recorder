@@ -1,3 +1,4 @@
+#:import utils kivy.utils
 <Mp4Recorder>:
 
     MDBoxLayout:
@@ -13,40 +14,69 @@
             size_hint: 1, .2
             multiline: True
 
-        MDRaisedButton:
+        Button:
             id: record_button
             text: "START Recording"
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
+            color: "black"
+            background_normal: ''
+            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
+            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.record()
 
-        MDRaisedButton:
+        Button:
             id: email_button
-            text: 'Email'
+            text: 'Email [Check WiFi first]'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
+            color: "black"
+            background_normal: ''
+            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
+            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.email()
 
-        MDRaisedButton:
+        Button:
             id: emailfile_button
-            text: 'Email File'
+            text: 'Email File [Check WiFi first]'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
+            color: "black"
+            background_normal: ''
+            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
+            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.emailfile()                
 
-        MDRaisedButton:
+        Button:
+            id: wifi_button
+            text: 'Check WiFi'
+            font_size: 24
+            halign: "center"
+            size_hint: 0.75, 0.25
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            color: "black"
+            background_normal: ''
+            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
+            background_color: utils.get_color_from_hex('fbb800')
+            on_release: root.check_wifi()
+
+        Button:
             id: exit_button
             text: 'Exit'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
+            color: "black"
+            background_normal: ''
+            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
+            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.exit()
 
         MDScrollView:

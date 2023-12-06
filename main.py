@@ -10,7 +10,9 @@ from kivy.factory import Factory
 from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
 from kivy.utils import platform
-
+from kivy.utils import get_color_from_hex
+from kivy.properties import StringProperty
+from kivymd.color_definitions import colors
 import time
 
 from os.path import basename,exists
@@ -18,23 +20,39 @@ from jnius import autoclass
 
 from recorder import Recorder
 
-mp4Recorder = ''
-loadFilename = ''
-emailFileMsg = ''
-wifiBlink = False
-recordSeconds = 0
-mp4Version = '1.9'
-blink_record_button = False
-email_ok2send = False
+"""
+Currently using external program to keep screen active. Any reason why you cant add in your code something like this
+android:keepScreenOn = “true”
+https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
+another reference
+https://www.stechies.com/keep-screen-stay-awake-android-app/
+"""
+
+# =========== WIP how to keep kivy android screen on python example
+# =========== WIP : https://stackoverflow.com/questions/63218114/how-to-keep-kivy-service-running-in-background-in-android-service-still-run-whe
+# =========== WIP see: \\wsl.localhost\Ubuntu\home\dovczitter\Mp4Recorder\.buildozer\android\platform\build-armeabi-v7a\dists\mp4recorderapp\jni\SDL\android-project\app\src\main\AndroidManifest.xml
+
+# See buildozer : #android.activity_class_name = org.kivy.android.PythonActivity
+#
 
 # camera: https://kivy.org/doc/stable/examples/gen__camera__main__py.html
 # video recorder: https://stackoverflow.com/questions/62063847/is-there-a-way-to-record-videos-in-kivy
-  
+# https://www.programcreek.com/python/?code=codelv%2Fenaml-native%2Fenaml-native-master%2Fsrc%2Fenamlnative%2Fandroid%2Fapp.py#
+
+# https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
+#
+
+__version__ = '2.6'
+mp4Recorder = ''
+loadFilename = ''
+emailFileMsg = ''
+check_wifi_flag = False
+
 # ============================================
 #               Mp4Recorder
 # ============================================
 class Mp4Recorder(MDBoxLayout):
-    
+
     def __init__(self, **kwargs):
         
         if not platform == "android":
@@ -42,9 +60,28 @@ class Mp4Recorder(MDBoxLayout):
             return
 
         from android.permissions import request_permissions, Permission
-        
+
+        global __version__
         global mp4Recorder
-        
+        global loadFilename
+        global emailFileMsg
+
+        self.wifiBlink = False
+        self.recordSeconds = 0
+        self.mp4Version = __version__
+        self.email_ok2send = False
+
+        # WIP:
+        # https://search.yahoo.com/yhs/search?hspart=mnet&hsimp=yhs-001&type=type9085796-spa-3537-84480&param1=3537&param2=84480&p=kivy+android+not+changing+button+color+python
+        #  https://www.geeksforgeeks.org/change-button-color-in-kivy/
+        # good: https://www.youtube.com/watch?v=2IuAQ1HUpU4
+        # color code picker: https://htmlcolorcodes.com/
+        #                    https://htmlcolorcodes.com/color-names/
+
+        self.color_red    = get_color_from_hex('#ff0000')
+        self.color_orange = get_color_from_hex('#fbb800')
+        self.color_green  = get_color_from_hex('#008000')
+
         super(Mp4Recorder, self).__init__(**kwargs)
         
         #
@@ -113,46 +150,46 @@ class Mp4Recorder(MDBoxLayout):
     #                   timer
     # ---------------------------------------------
     def timer(self, *args):
+        global mp4Recorder
         global loadFilename
         global emailFileMsg
-        global wifiBlink
-        global recordSeconds
-        global mp4Version
-        global blink_record_button
-        global email_ok2send
+        global check_wifi_flag
 
         from time import gmtime, strftime
         from datetime import datetime, timezone
         
         chk = ''
+        wifi_str = ''
         # -------- TODO - log transition ----------- 
         # -------- wifi -----------
-        if self.wifiCheck():
-            chk = '* UP *'
-            self.ids.time_label.color = "orange"
-            email_ok2send = True
-        else:
-            chk = '- DN -'
-            email_ok2send = False
-            if wifiBlink:
-                self.ids.time_label.color = "white"
-                wifiBlink = False                
+        if check_wifi_flag:
+            if self.wifiCheck():
+                chk = '* UP *'
+                self.ids.time_label.color = "orange"
+                self.email_ok2send = True
             else:
-                self.ids.time_label.color = "red"
-                wifiBlink = True
-        wifi_str = f'Wifi {chk}'
-        time_str = f'''[Mp4Recorder {mp4Version}]\n[{time.asctime()}]'''
+                chk = '- DN -'
+                self.email_ok2send = False
+                if self.wifiBlink:
+                    self.ids.time_label.color = "white"
+                    self.wifiBlink = False                
+                else:
+                    self.ids.time_label.color = "red"
+                    self.wifiBlink = True
+            wifi_str = f'Wifi {chk}'
+
+        time_str = f'''[Mp4Recorder {self.mp4Version}]\n[{time.asctime()}]'''
         
         # -------- record -----------
         
         if self.state == 'recording':
             # Regular time convert routines generate timezone issues
             # Decided to do this with simple per second math.
-            recordSeconds = recordSeconds + 1
+            self.recordSeconds = self.recordSeconds + 1
             
-            hrs = int(recordSeconds / 3600)
-            min = int(recordSeconds / 60)
-            sec = int(recordSeconds - (hrs*3600 + min*60))
+            hrs = int(self.recordSeconds / 3600)
+            min = int(self.recordSeconds / 60)
+            sec = int(self.recordSeconds - (hrs*3600 + min*60))
             
             diffStr = f'{hrs:02d}:{min:02d}:{sec:02d}'
             
@@ -160,27 +197,29 @@ class Mp4Recorder(MDBoxLayout):
             
             time_str = f'''[{mp4Fn}]\n[RecordingTime: {diffStr}]'''
 
-            if blink_record_button :
-                blink_record_button = False
-                self.ids.record_button.color = "orange"
-            else:
-                blink_record_button = True
-                self.ids.record_button.color = "red"
         else:
-            recordSeconds = 0           
-            
-        self.ids.time_label.text = f'''{time_str}\n[{wifi_str}]'''
+            self.recordSeconds = 0           
+        if check_wifi_flag:
+            self.ids.time_label.text = f'''\n{time_str}\n[{wifi_str}]\n'''
+        else:
+            self.ids.time_label.text = f'''\n{time_str}\n'''
         
-        if email_ok2send:
-            self.ids.email_button.color = "orange"
+        if self.email_ok2send:
+            self.ids.email_button.background_normal = ''
+            self.ids.email_button.background_color = self.color_orange
             self.ids.email_button.text = "Email"
-            self.ids.emailfile_button.color = "orange"
+
+            self.ids.emailfile_button.background_normal = ''
+            self.ids.emailfile_button.background_color = self.color_orange
             self.ids.emailfile_button.text = "Email File"
+
         else:
-            self.ids.email_button.color = "red"
-            self.ids.email_button.text = "No Email"
-            self.ids.emailfile_button.color = "red"
-            self.ids.emailfile_button.text = "No Email File"
+            self.ids.email_button.background_normal = ''
+            self.ids.email_button.background_color = self.color_red
+            self.ids.email_button.text = "No Email [Check WiFi]"
+            self.ids.emailfile_button.background_normal = ''
+            self.ids.emailfile_button.background_color = self.color_red
+            self.ids.emailfile_button.text = "No Email File [Check WiFi]"
 
         if exists(loadFilename):
             self.update_labels()
@@ -203,7 +242,6 @@ class Mp4Recorder(MDBoxLayout):
     #
     # -------- LogMessage ------- WIP -----
     #
-#    @staticmethod
     def LogMessage(self, msg):
         from datetime import datetime
         
@@ -230,13 +268,11 @@ class Mp4Recorder(MDBoxLayout):
     # ======================
     def email(self):
         global mp4Recorder
-        global email_ok2send
-
         msg = ''
         if self.state != 'ready':
             msg = 'Recording in progress.'
         else:
-            if email_ok2send:
+            if self.email_ok2send:
                 recordFilename = mp4Recorder.get_mp4_filename()
                 print(f'================= recordFilename [{recordFilename}] ====================')
                 msg = mp4Recorder.email(recordFilename)
@@ -262,7 +298,22 @@ class Mp4Recorder(MDBoxLayout):
         self.file_choose_root.show_load()
             
         self.update_labels()
-        
+
+    # ======================
+    #       check_wifi 
+    # ======================
+    def check_wifi(self):
+        global check_wifi_flag
+
+        if check_wifi_flag:
+            self.ids.wifi_button.background_normal = ''
+            self.ids.wifi_button.background_color = self.color_orange
+            check_wifi_flag = False
+        else:
+            self.ids.wifi_button.background_normal = ''
+            self.ids.wifi_button.background_color = self.color_green
+            check_wifi_flag = True
+
     # ======================
     #       exit 
     # ======================
@@ -276,12 +327,17 @@ class Mp4Recorder(MDBoxLayout):
     def update_labels(self):
         global mp4Recorder
         global loadFilename
+        global emailFileMsg
 
         # --------- Button label updates --------
         if self.state == 'ready':
+            self.ids.record_button.background_normal = ''
+            self.ids.record_button.background_color = self.color_orange
             self.ids.record_button.text = 'START Recording'
 
         if self.state == 'recording':
+            self.ids.record_button.background_normal = ''
+            self.ids.record_button.background_color = self.color_green
             self.ids.record_button.text = 'STOP Recording'
 
         # -------- Email and EmailFile updates
@@ -334,7 +390,9 @@ class Root(FloatLayout):
     #
     def show_load(self):
         global mp4Recorder
-        
+        global loadFilename
+        global emailFileMsg
+
         content = LoadDialog(emailfile=self.emailfile, cancel=self.dismiss_popup)
         print(f'=========== show_load path [{mp4Recorder.get_mp4_path()}] ==========')
         content.ids.filechooser.path = mp4Recorder.get_mp4_path()
@@ -349,6 +407,7 @@ class Root(FloatLayout):
         global mp4Recorder
         global loadFilename
         global emailFileMsg
+                
         msg = ''
         try:
             loadFilename = selection[0]

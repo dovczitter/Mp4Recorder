@@ -32,12 +32,12 @@ source.exclude_dirs = tests, bin, venv, .venv, save*
 
 # ============================================================================================
 # (str) Application versioning (method 1)
-version = 1.9
+# version = 2.0
 # ============================================================================================
 
 # (str) Application versioning (method 2)
-# version.regex = __version__ = ['"](.*)['"]
-# version.filename = %(source.dir)s/main.py
+version.regex = __version__ = ['"](.*)['"]
+version.filename = %(source.dir)s/main.py
 
 # ============================================================================================
 # (list) Application requirements
@@ -157,6 +157,7 @@ android.minapi = 21
 # (str) Extra xml to write directly inside the <manifest> element of AndroidManifest.xml
 # use that parameter to provide a filename from where to load your custom XML code
 #android.extra_manifest_xml = ./src/android/extra_manifest.xml
+android.extra_manifest_xml = extra_manifest.xml
 
 # (str) Extra xml to write directly inside the <manifest><application> tag of AndroidManifest.xml
 # use that parameter to provide a filename from where to load your custom XML arguments:
