@@ -175,6 +175,7 @@ class SharedStorage:
         except Exception as e:
             Logger.warning('SharedStorage.get_file_MIME_type():')
             Logger.warning(str(e))
+        print(f'========= get_file_MIME_type({file_name}), MIME_type [{MIME_type}] =============')
         return MIME_type    
 
     ###################
@@ -196,10 +197,12 @@ class SharedStorage:
 
     def _get_root_uri(self, root_directory, MIME_type):
         if root_directory == Environment.DIRECTORY_DOWNLOADS:
+            print(f'root_directory [{root_directory}]')
             root_uri = MediaStoreDownloads.EXTERNAL_CONTENT_URI
         else:
             root, ext = MIME_type.split('/')
             root = root.lower()
+            print(f'root_directory [{root_directory}] | root [{root}]')
             if root == 'image':
                 root_uri = MediaStoreImagesMedia.EXTERNAL_CONTENT_URI
             elif root == 'video':

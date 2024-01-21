@@ -14,11 +14,14 @@ from kivy.utils import get_color_from_hex
 from kivy.properties import StringProperty
 from kivymd.color_definitions import colors
 import time
+from datetime import datetime, timezone
 
-from os.path import basename,exists
+from os.path import basename,exists,isfile
+
 from jnius import autoclass
 
 from recorder import Recorder
+
 
 """
 Currently using external program to keep screen active. Any reason why you cant add in your code something like this
@@ -42,11 +45,14 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = '2.6'
+__version__ = 4.0
 mp4Recorder = ''
-loadFilename = ''
+loadFilename = None
 emailFileMsg = ''
 check_wifi_flag = False
+initial_check_wifi_flag = True
+log_root_filename = 'Mp4RecorderLog'
+msgList = []
 
 # ============================================
 #               Mp4Recorder
@@ -54,9 +60,8 @@ check_wifi_flag = False
 class Mp4Recorder(MDBoxLayout):
 
     def __init__(self, **kwargs):
-        
         if not platform == "android":
-            # ===== ToDo: Log an error =========
+            print('========== ERROR : not android platform ==============')
             return
 
         from android.permissions import request_permissions, Permission
@@ -70,7 +75,7 @@ class Mp4Recorder(MDBoxLayout):
         self.recordSeconds = 0
         self.mp4Version = __version__
         self.email_ok2send = False
-
+        self.logFp = None
         # WIP:
         # https://search.yahoo.com/yhs/search?hspart=mnet&hsimp=yhs-001&type=type9085796-spa-3537-84480&param1=3537&param2=84480&p=kivy+android+not+changing+button+color+python
         #  https://www.geeksforgeeks.org/change-button-color-in-kivy/
@@ -83,7 +88,7 @@ class Mp4Recorder(MDBoxLayout):
         self.color_green  = get_color_from_hex('#008000')
 
         super(Mp4Recorder, self).__init__(**kwargs)
-        
+
         #
         # 'request_permissions' first, waits in background until 'permissions_external_storage'
         # is complete. Then allows for the request respons, then continues with kivy. 
@@ -106,15 +111,12 @@ class Mp4Recorder(MDBoxLayout):
         self.sv = ScrollView()
         self.ml = MDList()
         self.sv.add_widget(self.ml)
-        self.contacts = []
+#       self.contacts = []
                      
         self.file_choose_root = Root()
         
-        rsp = self.wifiCheck()
-        print(f'after self.wifiCheck(), [{rsp}]')
-        
         self.start_time()
-
+        
     def permissions_external_storage(self, *args):  
         # https://github.com/kivy/plyer/issues/661                
         if platform == "android":
@@ -123,6 +125,7 @@ class Mp4Recorder(MDBoxLayout):
             Intent = autoclass("android.content.Intent")
             Settings = autoclass("android.provider.Settings")
             Uri = autoclass("android.net.Uri")
+
             # If you have access to the external storage, do whatever you need
             if Environment.isExternalStorageManager():
                 # If you don't have access, launch a new activity to show the user the system's dialog
@@ -154,15 +157,15 @@ class Mp4Recorder(MDBoxLayout):
         global loadFilename
         global emailFileMsg
         global check_wifi_flag
+        global initial_check_wifi_flag
 
         from time import gmtime, strftime
-        from datetime import datetime, timezone
         
         chk = ''
         wifi_str = ''
         # -------- TODO - log transition ----------- 
         # -------- wifi -----------
-        if check_wifi_flag:
+        if initial_check_wifi_flag or check_wifi_flag:
             if self.wifiCheck():
                 chk = '* UP *'
                 self.ids.time_label.color = "orange"
@@ -178,6 +181,7 @@ class Mp4Recorder(MDBoxLayout):
                     self.wifiBlink = True
             wifi_str = f'Wifi {chk}'
 
+        initial_check_wifi_flag = False
         time_str = f'''[Mp4Recorder {self.mp4Version}]\n[{time.asctime()}]'''
         
         # -------- record -----------
@@ -221,7 +225,7 @@ class Mp4Recorder(MDBoxLayout):
             self.ids.emailfile_button.background_color = self.color_red
             self.ids.emailfile_button.text = "No Email File [Check WiFi]"
 
-        if exists(loadFilename):
+        if loadFilename != None:
             self.update_labels()
     #
     # -------- start_time -------
@@ -240,26 +244,52 @@ class Mp4Recorder(MDBoxLayout):
         rsp = ping('google.com', timeout=1)
         return isinstance(rsp, float)
     #
-    # -------- LogMessage ------- WIP -----
+    # -------- logMessage -------
     #
-    def LogMessage(self, msg):
-        from datetime import datetime
-        
-        now = datetime.now()
-        dt_string = now.strftime("%d%b%Y_%H%M%S")
-        
-        logmsg = f'[{dt_string}] {msg}'
+    def logMessage(self, msg):
+        global log_root_filename
+        global msgList
 
-        self.ids.container.add_widget(
-            OneLineListItem(text=logmsg)
-        )
-        self.sv.scroll_to(logmsg)
+        now = datetime.now()
+        dt_string = now.strftime("%d%b%Y:%H:%M:%S")
+
+        if self.logFp == None:
+            dt_tag = now.strftime("%d%b%Y")
+            log_filename = f'{log_root_filename}_{dt_tag}.mp4'
+            self.LogPath = log_filename
+            print(f'========== log_filename: {log_filename}, LogPath: {self.LogPath}')
+            if isfile(self.LogPath):
+                print(f'================ isfile TRUE [{self.LogPath}]  ================')
+                self.logFp = open(self.LogPath,'a+')
+            else:
+                print(f'================ isfile FALSE [{self.LogPath}]  ================')
+                self.logFp = open(self.LogPath,'w+')
+            startmsg = f'[{dt_string}]  ========= {log_root_filename} {self.mp4Version} =========\n'
+            self.logFp.write(startmsg)
+            self.logFp.flush()
+
+        logmsg = f'[{dt_string}] {msg}\n'
+        self.logFp.write(logmsg)
+        self.logFp.flush()
+
+        mp4Recorder.file_copy(self.LogPath)
+
+        print(logmsg)
+
+        # Generate a reverse ordered view, current at top of list.
+        msgList.append(logmsg)
+        items = msgList.copy()
+        items.reverse()
+        self.ids.container.clear_widgets()
+        for item in items:
+            self.ids.container.add_widget(OneLineListItem(text=item))
     
     # ======================
     #       record 
     # ======================
     def record(self):
         global mp4Recorder
+        self.logMessage(self.ids.record_button.text)
         self.state = mp4Recorder.record(self.state)
         self.update_labels()
 
@@ -268,6 +298,7 @@ class Mp4Recorder(MDBoxLayout):
     # ======================
     def email(self):
         global mp4Recorder
+        self.logMessage(self.ids.email_button.text)
         msg = ''
         if self.state != 'ready':
             msg = 'Recording in progress.'
@@ -277,7 +308,7 @@ class Mp4Recorder(MDBoxLayout):
                 print(f'================= recordFilename [{recordFilename}] ====================')
                 msg = mp4Recorder.email(recordFilename)
         
-        self.LogMessage(msg)
+        self.logMessage(msg)
         
         self.update_labels()
 
@@ -285,8 +316,9 @@ class Mp4Recorder(MDBoxLayout):
     #       emailfile 
     # ======================
     def emailfile(self):
+        self.logMessage(self.ids.emailfile_button.text)
         if self.state != 'ready':
-            self.LogMessage('Recording in progress.')
+            self.logMessage('Recording in progress.')
             self.update_labels()
             return
         
@@ -304,7 +336,7 @@ class Mp4Recorder(MDBoxLayout):
     # ======================
     def check_wifi(self):
         global check_wifi_flag
-
+        self.logMessage(f'{self.ids.wifi_button.text} : {not check_wifi_flag}')
         if check_wifi_flag:
             self.ids.wifi_button.background_normal = ''
             self.ids.wifi_button.background_color = self.color_orange
@@ -313,12 +345,13 @@ class Mp4Recorder(MDBoxLayout):
             self.ids.wifi_button.background_normal = ''
             self.ids.wifi_button.background_color = self.color_green
             check_wifi_flag = True
-
+            
     # ======================
     #       exit 
     # ======================
     def exit(self):
         global mp4Recorder
+        self.logMessage(self.ids.exit_button.text)
         mp4Recorder.exit()
 
     # ======================
@@ -342,32 +375,36 @@ class Mp4Recorder(MDBoxLayout):
 
         # -------- Email and EmailFile updates
         recordFilename = mp4Recorder.get_mp4_filename()
-        if exists(recordFilename):
+        if isfile(recordFilename):
             basefn = basename(recordFilename)
             end_msg = f'[Audio : {self.state}] [Recorded File : {basefn}] '
-            self.LogMessage(end_msg)
+            self.logMessage(end_msg)
 
-        if exists(loadFilename):
+        if loadFilename != None: 
             basefn = basename(loadFilename)
             end_msg = f'[Email File : {basefn}] '
-            self.LogMessage(end_msg)
+            self.logMessage(end_msg)
             # NOTE - clear loacal loadFilename, generates only one update per load.
-            loadFilename = ''
+            loadFilename = None
             
 # ============================================
 #               LoadDialog
 # ============================================
 class LoadDialog(FloatLayout):
-    
-    def sort_by_date(files, filesystem):    
-        import os
-        return (sorted(f for f in files if filesystem.is_dir(f)) +
-            sorted((f for f in files if not filesystem.is_dir(f)), key=lambda fi: os.stat(fi).st_mtime, reverse = True))
+
+    # Note - exclude logfiles.
         
+    def sort_by_date(files, filesystem):    
+        import os  
+
+        return (sorted(f for f in files if filesystem.is_dir(f)) +
+            sorted((f for f in files if not filesystem.is_dir(f) and not 'Log' in f), key=lambda fi: os.stat(fi).st_mtime, reverse = True))
+
     def sort_by_name(files, filesystem):
         return (sorted(f for f in files if filesystem.is_dir(f)) +
-                sorted(f for f in files if not filesystem.is_dir(f))) 
-        
+            sorted((f for f in files if not filesystem.is_dir(f) and not 'Log' in f), reverse = True))
+
+
     default_sort_func = ObjectProperty(sort_by_date)
           
     emailfile = ObjectProperty(None)
@@ -411,7 +448,7 @@ class Root(FloatLayout):
         msg = ''
         try:
             loadFilename = selection[0]
-            if exists(loadFilename):
+            if isfile(loadFilename):
                 emailFileMsg = mp4Recorder.email(loadFilename)
             else:
                 emailFileMsg = f'Email File error, file [{loadFilename}] does not exist'
@@ -427,6 +464,10 @@ class Mp4RecorderApp(MDApp):
 
 Factory.register('Root', cls=Root)
 Factory.register('LoadDialog', cls=LoadDialog)
+
+# https://stackoverflow.com/questions/40090453/font-color-of-filechooser?rq=3
+
+from kivy.lang import Builder
 
 if __name__ == '__main__':
     

@@ -1,12 +1,11 @@
 from jnius import autoclass
-from kivy import Logger, platform
+from kivy import platform
 from datetime import datetime
 import os
+from os.path import exists
 import traceback
 
 from sharedstorage import SharedStorage
-
-#from moviepy.editor import VideoFileClip
 
 #
 Environment = None
@@ -58,13 +57,29 @@ class Recorder():
         self.SERVER_PORT = 0
         
         self.configInit()
-            
+
+    # ----------------- file_copy ------------------------ # 
+    def file_copy(self, fileName):
+        print(f'========== Start file_copy {fileName} ==============')
+        path = ''
+        try:
+            ss = SharedStorage()
+            print(f'======= before ss.copy_to_shared({fileName}) ========')
+            share = ss.copy_to_shared(fileName)
+            print(f'======= after  ss.copy_to_shared({fileName}) ========')
+            path = ss.copy_from_shared(share)
+            print(f'======= after  ss.copy_from_shared({path}) ========')
+        except Exception as error:
+            err = traceback.format_exc()
+            print(' ================================ exit traceback START ================================ ')
+            print(err)
+            print(' ================================ exit traceback END ================================ ')
+        print(f'========== End  file_copy [filename:{fileName}] [path:{path}] ==============')
+        return path
+    
     # ----------------- configInit ------------------------ #        
     def configInit(self):
-        
-        from os.path import exists
         import shutil
-#       from Mp3Recorder import LogMessage
         
         self.config.clear()
             
@@ -81,15 +96,15 @@ class Recorder():
         path = ''  
         content_list = []    
         try:
-            
             # Move a local copy and read config from here, may be locally modified.
             # https://www.tutorialspoint.com/How-to-copy-files-from-one-folder-to-another-using-Python
             documents_dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).getPath()
             ConfigPath = f'{documents_dir}/Mp4Recorder/Mp4Recorder.csv'
             if exists(ConfigPath) == False:
-                ss = SharedStorage()
-                share = ss.copy_to_shared(SharePath)
-                path = ss.copy_from_shared(share)
+                path = self.file_copy(SharePath)
+#                ss = SharedStorage()
+#                share = ss.copy_to_shared(SharePath)
+#                path = ss.copy_from_shared(share)
                 
             with open(ConfigPath) as f:
                 content_list = f.readlines()
@@ -139,10 +154,6 @@ class Recorder():
                 self.SERVER_PORT = int(str(self.config['Port'][0]).replace(' ',''))
                 print(f'self.SERVER_PORT: {self.SERVER_PORT}')
                
-#            LogMessage(f'Receiver: {self.EMAIL_TO}')
-#            rcvr = self.config['Receiver'] 
-#            LogMessage(f'self.config[Receiver]: {rcvr}') 
-                
         except Exception as error:
             self.config.clear()
             err = traceback.format_exc()
@@ -183,10 +194,7 @@ class Recorder():
         self.recorder.stop() 
       
         # Copy the mp4 to Main Storage:
-        ss = SharedStorage()
-        share = ss.copy_to_shared(self.mp4Fn)
-        path = ss.copy_from_shared(share)
-        
+        path = self.file_copy(self.mp4Fn)
         self.mp4_filename = path
 
         self.recorder.reset()
@@ -230,7 +238,6 @@ class Recorder():
         from email.mime.base import MIMEBase
         from email import encoders
         from os.path import exists
-        import traceback
 
         print(f'========= send_email: [{filename}] ==============')
         if filename == None or not exists(filename):
