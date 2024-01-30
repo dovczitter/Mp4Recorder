@@ -23,48 +23,34 @@
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             color: "black"
             background_normal: ''
-            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
             background_color: utils.get_color_from_hex('fbb800')
             on_release: root.record()
 
         Button:
             id: email_button
-            text: 'Email [Check WiFi first]'
+            text: 'Email'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             color: "black"
             background_normal: ''
-            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
             background_color: utils.get_color_from_hex('fbb800')
+            disabled: True if root.state != 'ready' else False
             on_release: root.email()
 
         Button:
             id: emailfile_button
-            text: 'Email File [Check WiFi first]'
+            text: 'Email File'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             color: "black"
             background_normal: ''
-            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
             background_color: utils.get_color_from_hex('fbb800')
+            disabled: True if root.state != 'ready' else False
             on_release: root.emailfile()                
-
-        Button:
-            id: wifi_button
-            text: 'Check WiFi'
-            font_size: 24
-            halign: "center"
-            size_hint: 0.75, 0.25
-            pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
-            background_color: utils.get_color_from_hex('fbb800')
-            on_release: root.check_wifi()
 
         Button:
             id: exit_button
@@ -75,7 +61,6 @@
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             color: "black"
             background_normal: ''
-            #background_color: (255/255.0, 165/255.0, 0/255.0, 1)
             background_color: utils.get_color_from_hex('fbb800')
             on_release: root.exit()
 
@@ -91,7 +76,9 @@
         size: root.size
         pos: root.pos
         orientation: "vertical"
+        
         # note -  see \\wsl.localhost\Ubuntu\home\dovczitter\Mp4Recorder\.venv\lib\python3.9\site-packages\kivy\data\style.kv
+        # https://stackoverflow.com/questions/61349456/adjust-kivy-filechooser-font-size
         FileChooser:
             id: filechooser
             path: "."
@@ -99,15 +86,17 @@
             FileChooserListLayout
 
         MDBoxLayout:
-            height: 30
+            height: 20
             Button:
                 id: emailfile_button
                 text: "EmailFile"
+                size_hint: 0.5, 0.20
                 font_size: 24
                 on_release: root.emailfile(filechooser.path, filechooser.selection)
                 
             Button:
                 id: cancel_button
-                font_size: 24
                 text: "Cancel"
+                font_size: 24
+                size_hint: 0.5, 0.20
                 on_release: root.cancel()

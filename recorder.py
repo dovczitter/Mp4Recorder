@@ -102,9 +102,6 @@ class Recorder():
             ConfigPath = f'{documents_dir}/Mp4Recorder/Mp4Recorder.csv'
             if exists(ConfigPath) == False:
                 path = self.file_copy(SharePath)
-#                ss = SharedStorage()
-#                share = ss.copy_to_shared(SharePath)
-#                path = ss.copy_from_shared(share)
                 
             with open(ConfigPath) as f:
                 content_list = f.readlines()
