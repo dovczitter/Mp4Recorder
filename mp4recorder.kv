@@ -36,6 +36,7 @@
             color: "black"
             background_normal: ''
             background_color: utils.get_color_from_hex('fbb800')
+            #https://stackoverflow.com/questions/61728185/python-kivy-how-to-disable-enable-a-button
             disabled: True if root.state != 'ready' else False
             on_release: root.email()
 
@@ -79,6 +80,7 @@
         
         # note -  see \\wsl.localhost\Ubuntu\home\dovczitter\Mp4Recorder\.venv\lib\python3.9\site-packages\kivy\data\style.kv
         # https://stackoverflow.com/questions/61349456/adjust-kivy-filechooser-font-size
+        # https://stackoverflow.com/questions/34298747/kivy-filechooserlistview-modifying-the-display-of-the-file-list
         FileChooser:
             id: filechooser
             path: "."

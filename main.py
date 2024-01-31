@@ -2,7 +2,7 @@ from kivymd.app import MDApp
 from kivy.clock import Clock
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.uix.scrollview import ScrollView
-from kivymd.uix.list import MDList, OneLineListItem
+from kivymd.uix.list import MDList, OneLineListItem, TwoLineListItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty
@@ -41,7 +41,7 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 4.4
+__version__ = 4.9
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
@@ -53,7 +53,10 @@ msgList = []
 #               Mp4Recorder
 # ============================================
 class Mp4Recorder(MDBoxLayout):
+
+    # https://stackoverflow.com/questions/58591221/kivy-attribute-error-object-has-no-attribute-trying-to-connect-widgets-in-kv
     state = ObjectProperty()
+
     def __init__(self, **kwargs):
         if not platform == "android":
             print('========== ERROR : not android platform ==============')
@@ -66,7 +69,7 @@ class Mp4Recorder(MDBoxLayout):
         global loadFilename
         global emailFileMsg
         
-#       self.wifiBlink = False
+        self.wifiBlink = False
         self.wifi_str = 'CheckWifi'
         self.recordSeconds = 0
         self.mp4Version = __version__
@@ -240,6 +243,9 @@ class Mp4Recorder(MDBoxLayout):
             dt_tag = now.strftime("%d%b%Y")
             log_filename = f'{log_root_filename}_{dt_tag}.mp4'
             self.LogPath = log_filename
+            #
+            # FIXME: Does not append to old file, needs work, ie file_get()
+            #
             print(f'========== log_filename: {log_filename}, LogPath: {self.LogPath}')
             if isfile(self.LogPath):
                 print(f'================ isfile TRUE [{self.LogPath}]  ================')
@@ -251,29 +257,14 @@ class Mp4Recorder(MDBoxLayout):
             self.logFp.write(startmsg)
             self.logFp.flush()
 
-        logmsg = f'[{dt_string}] {msg}\n'
+        logmsg = f'''[{dt_string}]\n{msg}'''
+
         self.logFp.write(logmsg)
         self.logFp.flush()
 
-        mp4Recorder.file_copy(self.LogPath)
-
         print(logmsg)
 
-        self.ids.container.add_widget(OneLineListItem(text=logmsg))
-
-        # Generate a reverse ordered view, current at top of list.
-#        msgList.append(logmsg)
-#        items = msgList.copy()
-#        items.reverse()
-#        self.ids.container.clear_widgets()
-#        for item in items:
-#            self.ids.container.add_widget(OneLineListItem(text=item))
-    
-#    # ---------------------------------------------
-#    #            get_state
-#    # ---------------------------------------------
-#    def get_state(self):
-#        return self.state
+        self.ids.container.add_widget(TwoLineListItem(text = dt_string, secondary_text = msg),index=0)
     
     # ---------------------------------------------
     #            record
@@ -297,8 +288,8 @@ class Mp4Recorder(MDBoxLayout):
             self.update_labels()
             return
         
+        recordFilename = mp4Recorder.get_mp4_filename()
         if self.email_ok2send:
-            recordFilename = mp4Recorder.get_mp4_filename()
             msg = mp4Recorder.email(recordFilename)
         else:
             msg = f'******* [WiFi DN] Cannot Email {recordFilename} ********'
@@ -339,7 +330,8 @@ class Mp4Recorder(MDBoxLayout):
         global mp4Recorder
         self.logMessage(self.ids.exit_button.text)
         # === testing ===
-#       mp4Recorder.file_copy(self.LogPath)
+        self.logFp.close()
+        mp4Recorder.file_copy(self.LogPath)
         mp4Recorder.exit()
 
     # ---------------------------------------------
