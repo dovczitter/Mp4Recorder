@@ -300,7 +300,8 @@
                 width: '10dp'
                 size_hint_x: None
             Label:
-                text: 'Name'
+#############   text: 'Name'
+                text: 'NameHeight'
                 text_size: self.size
                 halign: 'left'
                 bold: True
@@ -310,10 +311,12 @@
                 size_hint_x: None
                 halign: 'right'
                 bold: True
-            Widget:
-                # Just for spacing
-                width: '10dp'
-                size_hint_x: None
+#            Widget:
+#                # Just for spacing
+#               width: '10dp'
+#                width: '50dp'
+#                height: '50dp'
+#                size_hint_x: None
         ScrollView:
             id: scrollview
             do_scroll_x: False
@@ -323,12 +326,23 @@
                 do_translation: False
                 size: treeview.size
                 size_hint_y: None
+#----
+#                canvas:
+#                    Color:
+#                        rgba: 255, 0, 0, 1
+#----                
                 TreeView:
                     id: treeview
                     hide_root: True
                     size_hint_y: None
                     width: scrollview.width
                     height: self.minimum_height
+#                   height: '100dp'
+#----
+#                    canvas:
+#                        Color:
+#                            rgba: 255, 0, 0, 1
+#----
                     on_node_expand: root.controller.entry_subselect(args[1])
                     on_node_collapse: root.controller.close_subselection(args[1])
 
@@ -350,8 +364,7 @@
 
     orientation: 'horizontal'
     size_hint_y: None
-#   height: '48dp' if dp(1) > 1 else '24dp'
-    height: '96dp' if dp(1) > 1 else '48dp'
+    height: '48dp' if dp(1) > 1 else '24dp'
     # Don't allow expansion of the ../ node
     is_leaf: not ctx.isdir or ctx.name.endswith('..' + ctx.sep) or self.locked
     on_touch_down: self.collide_point(*args[1].pos) and ctx.controller().entry_touched(self, args[1])
@@ -360,6 +373,7 @@
         pos: root.pos
         size_hint_x: None
         width: root.width - dp(10)
+        height: dp(100)
         Label:
             id: filename
             text_size: self.width, None

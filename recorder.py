@@ -205,6 +205,11 @@ class Recorder():
             return self.mp4Fn
         return self.mp4_filename
 
+    # ----------------- clear_mp4_filename ------------------------ #
+    def clear_mp4_filename(self):
+        self.mp4_filename = ''
+        self.mp4Fn = ''
+
     # ----------------- get_mp4_path ------------------------ #
     def get_mp4_path(self):
         path = "/storage/emulated/0/Movies/Mp4Recorder"
@@ -288,9 +293,9 @@ class Recorder():
             print(' ================================ sendmail traceback START ================================ ')
             print(err)
             print(' ================================ sendmail traceback END ================================ ')
-            return f'[{basefn}] email error : {err}.'
+            return f'Email error [{basefn}] : {err}.'
         
-        return f'[{basefn}] email complete.'
+        return f'Email complete [{basefn}].'
     
     # ======== email ========
     def email(self, filename):
