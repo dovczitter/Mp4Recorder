@@ -28,7 +28,7 @@
 
         Button:
             id: email_button
-            text: 'Email'
+            text: 'Email [No recording to email]'
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
@@ -37,7 +37,7 @@
             background_normal: ''
             background_color: utils.get_color_from_hex('fbb800')
             #https://stackoverflow.com/questions/61728185/python-kivy-how-to-disable-enable-a-button
-            disabled: True if root.state != 'ready' else False
+#           disabled: True if root.state != 'ready' or root.email_ok2send == False else False
             on_release: root.email()
 
         Button:
@@ -89,6 +89,7 @@
 
         MDBoxLayout:
             height: 20
+
             Button:
                 id: emailfile_button
                 text: "EmailFile"

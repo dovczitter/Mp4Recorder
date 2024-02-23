@@ -18,12 +18,18 @@ from os.path import basename, isfile
 from jnius import autoclass
 from recorder import Recorder
 
+# ----------------- NOTE NOTE NOTE -------------------
+# ----------------- NOTE NOTE NOTE -------------------
+# ----------------- NOTE NOTE NOTE -------------------
 # to import modified style.kv: https://stackoverflow.com/questions/52812576/how-to-customize-style-kv-in-kivy
-#import kivy
-#from kivy.lang import Builder
-#import os 
-#Builder.unload_file(os.path.join(kivy.__file__, '../data/style.kv'))
-#Builder.load_file('./style.kv')
+import kivy
+from kivy.lang import Builder
+import os 
+Builder.unload_file(os.path.join(kivy.__file__, '../data/style.kv'))
+Builder.load_file('./style.kv')
+# ----------------- NOTE NOTE NOTE -------------------
+# ----------------- NOTE NOTE NOTE -------------------
+# ----------------- NOTE NOTE NOTE -------------------
 
 """
 Currently using external program to keep screen active. Any reason why you cant add in your code something like this
@@ -47,7 +53,7 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 5.9
+__version__ = 6.9
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
@@ -293,7 +299,7 @@ class Mp4Recorder(MDBoxLayout):
         cur_basefn = basename(cur_fn)
 
         if self.state == 'ready':                        
-            self.ids.email_button.text = f'''Email\n{old_basefn}'''
+            self.ids.email_button.text = f'''Email Recording\n{old_basefn}'''
             self.logMessage(f'''Recording complete, {old_basefn}.''')
         else:
             self.logMessage(f'''Recording started, {cur_basefn}.''')
@@ -314,13 +320,14 @@ class Mp4Recorder(MDBoxLayout):
                 
         recordFilename = mp4Recorder.get_mp4_filename()
         if recordFilename == '':
-            msg = f'{self.ids.email_button.text}: No new recording to email.'
-            self.ids.email_button.text = 'Email'
+            self.ids.email_button.text = 'Email [No recording to email]'
+            msg = self.ids.email_button.text
         else:
             if self.email_ok2send:
+                self.ids.email_button.text = f'''Emailing\n{recordFilename}'''
                 msg = mp4Recorder.email(recordFilename)
                 mp4Recorder.clear_mp4_filename()
-                self.ids.email_button.text = 'Email'
+                self.ids.email_button.text = 'Email [No recording to email]'
             else:
                 msg = f'{self.ids.email_button.text} ******* [WiFi DN] Cannot Email {recordFilename} ********'
 
@@ -420,6 +427,9 @@ class Mp4Recorder(MDBoxLayout):
 # =============================================
 class LoadDialog(FloatLayout):
 
+    def __init__(self, **kwargs):
+        super(LoadDialog, self).__init__(**kwargs)
+
     # Note - exclude logfiles.
         
     def sort_by_date(files, filesystem):    
@@ -443,6 +453,10 @@ class LoadDialog(FloatLayout):
 #            Root
 # =============================================
 class Root(FloatLayout):
+    
+    def __init__(self, **kwargs):
+        super(Root, self).__init__(**kwargs)
+        self.content = None
 
     # ---------------------------------------------
     #            dismiss_popup
@@ -458,13 +472,13 @@ class Root(FloatLayout):
         global loadFilename
         global emailFileMsg
 
-        content = LoadDialog(emailfile=self.emailfile, cancel=self.dismiss_popup)
+        self.content = LoadDialog(emailfile=self.emailfile, cancel=self.dismiss_popup)
         print(f'=========== show_load path [{mp4Recorder.get_mp4_path()}] ==========')
-        content.ids.filechooser.path = mp4Recorder.get_mp4_path()
+        self.content.ids.filechooser.path = mp4Recorder.get_mp4_path()
 
-        self._popup = Popup(title="Load file", content=content, size_hint=(0.9, 0.9))
+        self._popup = Popup(title="Load file", content=self.content, size_hint=(0.9, 0.9))
         self._popup.open()
- 
+
     # ---------------------------------------------
     #            emailfile
     # ---------------------------------------------
@@ -476,7 +490,9 @@ class Root(FloatLayout):
         msg = ''
         try:
             loadFilename = selection[0]
-            print(f'================= emailfile loadFilename [{loadFilename}]=========')
+#           basefn = basename(loadFilename)
+#           print(f'================= emailfile basefn [{basefn}]=========')
+#           self.content.ids.emailfile_button.text = basefn
             if isfile(loadFilename):
                 emailFileMsg = mp4Recorder.email(loadFilename)
             else:
@@ -484,7 +500,7 @@ class Root(FloatLayout):
             self.dismiss_popup()
         except:
             pass
-        
+    
 # =============================================
 #            Mp4RecorderApp
 # =============================================

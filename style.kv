@@ -300,23 +300,22 @@
                 width: '10dp'
                 size_hint_x: None
             Label:
-#############   text: 'Name'
-                text: 'NameHeight'
+                text: 'Name'
+                font_size: '24dp'
                 text_size: self.size
                 halign: 'left'
                 bold: True
             Label:
                 text: 'Size'
+                font_size: '24dp'
                 text_size: self.size
                 size_hint_x: None
                 halign: 'right'
                 bold: True
-#            Widget:
-#                # Just for spacing
-#               width: '10dp'
-#                width: '50dp'
-#                height: '50dp'
-#                size_hint_x: None
+            Widget:
+                # Just for spacing
+                width: '10dp'
+                size_hint_x: None
         ScrollView:
             id: scrollview
             do_scroll_x: False
@@ -326,33 +325,36 @@
                 do_translation: False
                 size: treeview.size
                 size_hint_y: None
-#----
-#                canvas:
-#                    Color:
-#                        rgba: 255, 0, 0, 1
-#----                
                 TreeView:
                     id: treeview
                     hide_root: True
                     size_hint_y: None
                     width: scrollview.width
                     height: self.minimum_height
-#                   height: '100dp'
-#----
-#                    canvas:
-#                        Color:
-#                            rgba: 255, 0, 0, 1
-#----
                     on_node_expand: root.controller.entry_subselect(args[1])
                     on_node_collapse: root.controller.close_subselection(args[1])
 
 <FileChooserListView>:
+
+# see color change: https://stackoverflow.com/questions/40090453/font-color-of-filechooser
+    # --------------------
+    # ADD BACKGROUND COLOR
+    # --------------------
+    canvas.before:
+        Color:
+            rgb: 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
     layout: layout
     FileChooserListLayout:
         id: layout
         controller: root
 
 [FileListEntry@FloatLayout+TreeViewNode]:
+
+# see font-size change: https://stackoverflow.com/questions/61349456/adjust-kivy-filechooser-font-size
+
     locked: False
     entries: []
     path: ctx.path
@@ -364,7 +366,7 @@
 
     orientation: 'horizontal'
     size_hint_y: None
-    height: '48dp' if dp(1) > 1 else '24dp'
+    height: '96dp' if dp(1) > 1 else '48dp'                         # height must be big enough to hold font sized below
     # Don't allow expansion of the ../ node
     is_leaf: not ctx.isdir or ctx.name.endswith('..' + ctx.sep) or self.locked
     on_touch_down: self.collide_point(*args[1].pos) and ctx.controller().entry_touched(self, args[1])
@@ -373,20 +375,33 @@
         pos: root.pos
         size_hint_x: None
         width: root.width - dp(10)
-        height: dp(100)
         Label:
             id: filename
+            # --------------
+            # CHANGE FONT COLOR
+            # --------------
+            even_color: 0.5,0.1,0.1,1
+            odd_color: 0.1,0.1,0.5,1
+            bold: True
+            font_size: '24dp'                                  # adjust this font size
+            size_hint_x: None
+            width: root.width - sz.width                       # this allows filename Label to fill width less size Label
             text_size: self.width, None
             halign: 'left'
             shorten: True
             text: ctx.name
-            font_name: ctx.controller().font_name
         Label:
-            text_size: self.width, None
+            id: sz
+            # --------------
+            # CHANGE FONT COLOR
+            # --------------
+            even_color: 0.5,0.1,0.1,1
+            odd_color: 0.1,0.1,0.5,1
+            bold: True
+            font_size: '24dp'                                  # adjust this font size
             size_hint_x: None
-            halign: 'right'
+            width: self.texture_size[0]                        # this makes the size Label to minimum width
             text: '{}'.format(ctx.get_nice_size())
-            font_name: ctx.controller().font_name
 
 <FileChooserIconLayout>:
     on_entry_added: stacklayout.add_widget(args[1])
@@ -895,6 +910,7 @@
         font_size: '15sp'
 
 <SettingTitle>:
+    text: self.title
     text_size: self.width - 32, None
     size_hint_y: None
     height: max(dp(20), self.texture_size[1] + dp(20))
