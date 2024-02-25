@@ -53,7 +53,7 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 6.9
+__version__ = 6.1
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''

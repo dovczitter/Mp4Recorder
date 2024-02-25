@@ -246,6 +246,7 @@
         Rectangle:
             pos: [self.parent.x, self.y] if self.parent else [0, 0]
             size: [self.parent.width, self.height] if self.parent else [1, 1]
+
         Color:
             rgba: 1, 1, 1, int(not self.is_leaf)
         Rectangle:
@@ -254,16 +255,14 @@
             pos: self.x - dp(20), int(self.center_y - (self.height / (3. if dp(1) > 1 else 2.)) * .5)
     canvas.after:
         Color:
-            rgba: .5, .5, .5, .2
+            rgba: self.color_selected if self.is_selected else self.odd_color if self.odd else self.even_color
         Line:
             points: [self.parent.x, self.y, self.parent.right, self.y] if self.parent else []
-
 
 <TreeViewLabel>:
     width: self.texture_size[0]
     height: max(self.texture_size[1] + dp(10), dp(24))
     text_size: self.width, None
-
 
 <StencilView>:
     canvas.before:
@@ -279,7 +278,6 @@
             pos: self.pos
             size: self.size
         StencilPop
-
 
 <FileChooserListLayout>:
     on_entry_added: treeview.add_node(args[1])
@@ -304,18 +302,21 @@
                 font_size: '24dp'
                 text_size: self.size
                 halign: 'left'
-                bold: True
+#ok               bold: True
+
             Label:
                 text: 'Size'
                 font_size: '24dp'
                 text_size: self.size
                 size_hint_x: None
                 halign: 'right'
-                bold: True
+#ok               bold: True
+
             Widget:
                 # Just for spacing
                 width: '10dp'
                 size_hint_x: None
+
         ScrollView:
             id: scrollview
             do_scroll_x: False
@@ -340,12 +341,13 @@
     # --------------------
     # ADD BACKGROUND COLOR
     # --------------------
-    canvas.before:
-        Color:
-            rgb: 1, 1, 1
-        Rectangle:
-            pos: self.pos
-            size: self.size
+#    canvas.before:
+#        Color:
+##           rgb: 1, 1, 1
+#            rgb: 1, 0, 0, 1
+#        Rectangle:
+#            pos: self.pos
+#            size: self.size
     layout: layout
     FileChooserListLayout:
         id: layout
@@ -375,14 +377,15 @@
         pos: root.pos
         size_hint_x: None
         width: root.width - dp(10)
+
         Label:
             id: filename
-            # --------------
-            # CHANGE FONT COLOR
-            # --------------
-            even_color: 0.5,0.1,0.1,1
-            odd_color: 0.1,0.1,0.5,1
-            bold: True
+#            # --------------
+#            # CHANGE FONT COLOR
+#            # --------------
+#            even_color: 0.5,0.1,0.1,1
+#            odd_color: 0.1,0.1,0.5,1
+#            bold: True
             font_size: '24dp'                                  # adjust this font size
             size_hint_x: None
             width: root.width - sz.width                       # this allows filename Label to fill width less size Label
@@ -390,14 +393,15 @@
             halign: 'left'
             shorten: True
             text: ctx.name
+        
         Label:
             id: sz
-            # --------------
-            # CHANGE FONT COLOR
-            # --------------
-            even_color: 0.5,0.1,0.1,1
-            odd_color: 0.1,0.1,0.5,1
-            bold: True
+#            # --------------
+#            # CHANGE FONT COLOR
+#            # --------------
+#            even_color: 0.5,0.1,0.1,1
+#            odd_color: 0.1,0.1,0.5,1
+#            bold: True
             font_size: '24dp'                                  # adjust this font size
             size_hint_x: None
             width: self.texture_size[0]                        # this makes the size Label to minimum width
@@ -437,6 +441,7 @@
     path: ctx.path
     selected: self.path in ctx.controller().selection
     size_hint: None, None
+#   background_color: (1.0, 0.0, 0.0, 1.0)
 
     on_touch_down: self.collide_point(*args[1].pos) and ctx.controller().entry_touched(self, args[1])
     on_touch_up: self.collide_point(*args[1].pos) and ctx.controller().entry_released(self, args[1])
@@ -445,6 +450,7 @@
     canvas:
         Color:
             rgba: 1, 1, 1, 1 if self.selected else 0
+#           rgba: 1, 1, 1, 1 if self.selected else 1,0,0,1
         BorderImage:
             border: 8, 8, 8, 8
             pos: root.pos
@@ -463,6 +469,7 @@
         shorten: True
         size: '100dp', '16dp'
         pos: root.x, root.y + dp(16)
+
     Label:
         text: '{}'.format(ctx.get_nice_size())
         font_name: ctx.controller().font_name
