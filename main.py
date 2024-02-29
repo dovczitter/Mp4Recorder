@@ -53,13 +53,14 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 6.1
+__version__ = 6.2
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
 # Note: 'LoadDialog' filters listing with 'Log' in filename
 log_root_filename = 'Mp4RecorderLog'
 msgList = []
+isCheckwifi = False
 
 # ============================================
 #               Mp4Recorder
@@ -84,7 +85,7 @@ class Mp4Recorder(MDBoxLayout):
         self.wifiBlink = False
         self.recordBlink = False
         self.recordFilename = ''
-        self.wifi_str = 'CheckWifi'
+        self.wifi_str = 'CheckWifi -DISABLED-'
         self.recordSeconds = 0
         self.mp4Version = __version__
         self.email_ok2send = False
@@ -234,18 +235,26 @@ class Mp4Recorder(MDBoxLayout):
     #            check_wifi
     # ---------------------------------------------
     def check_wifi(self):
-        chk = ''
-        if self.wifiCheck():
-            chk = '* UP *'
-            self.email_ok2send = True
-        else:
-            chk = '- DN -'
-            self.email_ok2send = False
-            if self.wifiBlink:
-                self.wifiBlink = False                
+        global isCheckwifi
+
+        if isCheckwifi:
+            chk = ''
+            if self.wifiCheck():
+                chk = '* UP *'
+                self.email_ok2send = True
             else:
-                self.wifiBlink = True
-        self.wifi_str = f'Wifi {chk}'
+                chk = '- DN -'
+                self.email_ok2send = False
+                if self.wifiBlink:
+                    self.wifiBlink = False                
+                else:
+                    self.wifiBlink = True
+            self.wifi_str = f'Wifi {chk}'
+        else:
+            self.wifi_str = self.ids.checkwifi_button.text
+            self.wifiBlink = False
+            self.email_ok2send = True
+
         return self.email_ok2send
 
     # ---------------------------------------------
@@ -359,6 +368,21 @@ class Mp4Recorder(MDBoxLayout):
         self.update_labels()
 
     # ---------------------------------------------
+    #            checkwifi
+    # ---------------------------------------------
+    def checkwifi(self):
+        global isCheckwifi
+
+        chk = '-DISABLED-'
+        isCheckwifi = not isCheckwifi
+        if isCheckwifi: chk='*ENABLED*'
+
+        msg = f'CheckWifi {chk}'
+        self.ids.checkwifi_button.text = msg
+        self.logMessage(msg)            
+        self.update_labels()
+
+    # ---------------------------------------------
     #            exit
     # ---------------------------------------------
     def exit(self):
@@ -383,6 +407,7 @@ class Mp4Recorder(MDBoxLayout):
         global mp4Recorder
         global loadFilename
         global emailFileMsg
+        global isCheckwifi
 
         recordFilename = mp4Recorder.get_mp4_filename()
         basefn = basename(recordFilename)
@@ -408,12 +433,16 @@ class Mp4Recorder(MDBoxLayout):
             else:
                 self.ids.emailfile_button.text = "Email File"
         else:
-            self.ids.email_button.text = "No Email [WiFi DN]"
-            self.ids.emailfile_button.text = "No Email File [WiFi DN]"
-            if self.wifiBlink:
-                self.ids.time_label.color = "white"
+            if isCheckwifi:
+                self.ids.email_button.text = "No Email [WiFi DN]"
+                self.ids.emailfile_button.text = "No Email File [WiFi DN]"
+                if self.wifiBlink:
+                    self.ids.time_label.color = "white"
+                else:
+                    self.ids.time_label.color = "red"
             else:
-                self.ids.time_label.color = "red"
+                self.ids.email_button.text = "No Email"
+                self.ids.emailfile_button.text = "Email File"
 
         if loadFilename != None: 
             basefn = basename(loadFilename)
