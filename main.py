@@ -53,13 +53,12 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 6.2
+__version__ = 6.5
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
 # Note: 'LoadDialog' filters listing with 'Log' in filename
 log_root_filename = 'Mp4RecorderLog'
-msgList = []
 isCheckwifi = False
 
 # ============================================
@@ -82,15 +81,8 @@ class Mp4Recorder(MDBoxLayout):
         global loadFilename
         global emailFileMsg
         
-        self.wifiBlink = False
-        self.recordBlink = False
-        self.recordFilename = ''
-        self.wifi_str = 'CheckWifi -DISABLED-'
-        self.recordSeconds = 0
-        self.mp4Version = __version__
-        self.email_ok2send = False
-        self.logFp = None
-        self.permissions_external_storage_complete = False
+        self.msgList = []
+        self.logMsgCount = 0
 
         # WIP:
         # https://search.yahoo.com/yhs/search?hspart=mnet&hsimp=yhs-001&type=type9085796-spa-3537-84480&param1=3537&param2=84480&p=kivy+android+not+changing+button+color+python
@@ -103,6 +95,29 @@ class Mp4Recorder(MDBoxLayout):
         self.color_orange = get_color_from_hex('#fbb800')
         self.color_green  = get_color_from_hex('#008000')
         self.color_yellow = get_color_from_hex('#ffee33')
+
+        self.time_label_color = self.color_orange
+        self.record_button_color = self.color_orange
+        self.email_button_color = self.color_orange
+        self.emailfile_button_color = self.color_orange
+        self.checkwifi_button_color = self.color_orange
+        self.exit_button_color = self.color_orange
+
+        self.time_label_text = '00:00:00'
+        self.record_button_text = 'START Recording'
+        self.email_button_text = 'Email [No recording to email]'
+        self.emailfile_button_text = 'Email File'
+        self.checkwifi_button_text = 'CheckWifi -DISABLED-'
+        self.exit_button_text = 'Exit'
+
+        self.wifiBlink = False
+        self.recordBlink = False
+        self.recordFilename = ''
+        self.recordSeconds = 0
+        self.mp4Version = __version__
+        self.email_ok2send = False
+        self.logFp = None
+        self.permissions_external_storage_complete = False
         
         super(Mp4Recorder, self).__init__(**kwargs)
        
@@ -197,20 +212,20 @@ class Mp4Recorder(MDBoxLayout):
             sec = int(self.recordSeconds - (hrs*3600 + min*60))
             
             RecordingTime = f'{hrs:02d}:{min:02d}:{sec:02d}'
-            self.ids.record_button.text = f'''Recording [{RecordingTime}]\n{mp4Recorder.get_mp4_filename()}'''
+            self.ids.record_button.text = f'''STOP Recording [{RecordingTime}]\n{mp4Recorder.get_mp4_filename()}'''
 
             if self.recordBlink:
                 self.recordBlink = False
-                self.ids.record_button.background_color = self.color_green
+                self.ids.record_button.md_bg_color = self.color_green
             else:
                 self.recordBlink = True
-                self.ids.record_button.background_color = "white"
+                self.ids.record_button.md_bg_color = self.color_orange
         else:
             self.recordSeconds = 0  
             self.recordBlink = False         
 
-        self.ids.time_label.text = f'''\n{time_str}\n[{self.wifi_str}]\n'''
-        
+        self.ids.time_label.text = f'''\n{time_str}\n[{self.checkwifi_text}]\n'''
+
         if loadFilename != None:
             self.update_labels()
 
@@ -249,9 +264,9 @@ class Mp4Recorder(MDBoxLayout):
                     self.wifiBlink = False                
                 else:
                     self.wifiBlink = True
-            self.wifi_str = f'Wifi {chk}'
+            self.checkwifi_text = f'Wifi {chk}'
         else:
-            self.wifi_str = self.ids.checkwifi_button.text
+            self.checkwifi_text = self.ids.checkwifi_button.text
             self.wifiBlink = False
             self.email_ok2send = True
 
@@ -262,7 +277,6 @@ class Mp4Recorder(MDBoxLayout):
     # ---------------------------------------------
     def logMessage(self, msg):
         global log_root_filename
-        global msgList
 
         now = datetime.now()
         dt_string = now.strftime("%d%b%Y:%H:%M:%S")
@@ -288,9 +302,12 @@ class Mp4Recorder(MDBoxLayout):
         self.logFp.flush()
 
         print(logmsg)
+        
+        # Show in ScrollView, current n top.
+        txt = f'[{dt_string}] {msg}'
+        self.ids.container.add_widget(OneLineListItem(text = txt),index=self.logMsgCount)
+        self.logMsgCount = self.logMsgCount + 1
 
-        self.ids.container.add_widget(TwoLineListItem(text = dt_string, secondary_text = msg),index=0)
-    
     # ---------------------------------------------
     #            record
     # ---------------------------------------------
@@ -329,14 +346,14 @@ class Mp4Recorder(MDBoxLayout):
                 
         recordFilename = mp4Recorder.get_mp4_filename()
         if recordFilename == '':
-            self.ids.email_button.text = 'Email [No recording to email]'
+            self.ids.email_button.text = self.email_button_text
             msg = self.ids.email_button.text
         else:
             if self.email_ok2send:
                 self.ids.email_button.text = f'''Emailing\n{recordFilename}'''
                 msg = mp4Recorder.email(recordFilename)
                 mp4Recorder.clear_mp4_filename()
-                self.ids.email_button.text = 'Email [No recording to email]'
+                self.ids.email_button.text = self.email_button_text
             else:
                 msg = f'{self.ids.email_button.text} ******* [WiFi DN] Cannot Email {recordFilename} ********'
 
@@ -414,13 +431,13 @@ class Mp4Recorder(MDBoxLayout):
 
         # --------- Button label updates --------
         if self.state == 'ready':
-            self.ids.record_button.background_normal = ''
-            self.ids.record_button.background_color = self.color_orange
-            self.ids.record_button.text = 'START Recording'
+#           self.ids.record_button.background_normal = ''
+            self.ids.record_button.md_bg_color = self.color_orange
+            self.ids.record_button.text = self.record_button_text
 
         if self.state == 'recording':
-            self.ids.record_button.background_normal = ''
-            self.ids.record_button.background_color = self.color_green
+#           self.ids.record_button.background_normal = ''
+            self.ids.record_button.md_bg_color = self.color_green
 
         # -------- Email and EmailFile updates
         if self.email_ok2send:

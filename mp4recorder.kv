@@ -7,74 +7,64 @@
         
         MDLabel:
             id: time_label
-            text: '00:00:00'
+            text: root.time_label_text
+            color: root.time_label_color
             font_size: 24
-            color: "orange"
             halign: "left"
             size_hint: 1, .3
             multiline: True
 
         MDRaisedButton:
             id: record_button
-            text: "START Recording"
+            text: root.record_button_text
+            color: root.record_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.record()
 
         MDRaisedButton:
             id: email_button
-            text: 'Email [No recording to email]'
+            text: root.email_button_text
+            color: root.email_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            background_color: utils.get_color_from_hex('fbb800')
             #https://stackoverflow.com/questions/61728185/python-kivy-how-to-disable-enable-a-button
 #           disabled: True if root.state != 'ready' or root.email_ok2send == False else False
             on_release: root.email()
 
         MDRaisedButton:
             id: emailfile_button
-            text: 'Email File'
+            text: root.emailfile_button_text
+            color: root.emailfile_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            background_color: utils.get_color_from_hex('fbb800')
             disabled: True if root.state != 'ready' else False
             on_release: root.emailfile()                
 
         MDRaisedButton:
             id: checkwifi_button
-            text: root.wifi_str
+            text: root.checkwifi_button_text
+            color: root.checkwifi_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.checkwifi()                
 
         MDRaisedButton:
             id: exit_button
-            text: 'Exit'
+            text: root.exit_button_text
+            color: root.exit_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            color: "black"
-            background_normal: ''
-            background_color: utils.get_color_from_hex('fbb800')
             on_release: root.exit()
 
         MDScrollView:
