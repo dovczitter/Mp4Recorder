@@ -53,12 +53,12 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 6.5
+__version__ = 6.8
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
 # Note: 'LoadDialog' filters listing with 'Log' in filename
-log_root_filename = 'Mp4RecorderLog'
+log_root_filename = 'Mp4Recorder'
 isCheckwifi = False
 
 # ============================================
@@ -81,7 +81,6 @@ class Mp4Recorder(MDBoxLayout):
         global loadFilename
         global emailFileMsg
         
-        self.msgList = []
         self.logMsgCount = 0
 
         # WIP:
@@ -282,8 +281,11 @@ class Mp4Recorder(MDBoxLayout):
         dt_string = now.strftime("%d%b%Y:%H:%M:%S")
 
         if self.logFp == None:
-            dt_tag = now.strftime("%d%b%Y")
-            log_filename = f'{log_root_filename}_{dt_tag}.mp4'
+            # Note, dt_tag is valid per install, a re-install would clear cache file.
+            # Use HMS for re-install case. 
+#           dt_tag = now.strftime("%d%b%Y")
+            dt_tag = now.strftime("%d%b%Y_%H%M%S")
+            log_filename = f'{log_root_filename}_{dt_tag}.log'
             self.LogPath = log_filename
             print(f'========== log_filename: {log_filename}, LogPath: {self.LogPath}')
             if isfile(self.LogPath):
@@ -300,6 +302,8 @@ class Mp4Recorder(MDBoxLayout):
 
         self.logFp.write(logmsg)
         self.logFp.flush()
+      
+        mp4Recorder.file_copy(self.LogPath)
 
         print(logmsg)
         
