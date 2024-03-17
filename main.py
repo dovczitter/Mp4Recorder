@@ -18,10 +18,14 @@ from os.path import basename, isfile
 from jnius import autoclass
 from recorder import Recorder
 
+import socket
+
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
 # to import modified style.kv: https://stackoverflow.com/questions/52812576/how-to-customize-style-kv-in-kivy
+# https://stackoverflow.com/questions/40090453/font-color-of-filechooser?rq=3
+#
 import kivy
 from kivy.lang import Builder
 import os 
@@ -30,14 +34,6 @@ Builder.load_file('./style.kv')
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
-
-"""
-Currently using external program to keep screen active. Any reason why you cant add in your code something like this
-android:keepScreenOn = “true”
-https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
-another reference
-https://www.stechies.com/keep-screen-stay-awake-android-app/
-"""
 
 # =========== WIP how to keep kivy android screen on python example
 # =========== WIP : https://stackoverflow.com/questions/63218114/how-to-keep-kivy-service-running-in-background-in-android-service-still-run-whe
@@ -53,7 +49,7 @@ https://www.stechies.com/keep-screen-stay-awake-android-app/
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 6.8
+__version__ = 7.0
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
@@ -238,13 +234,20 @@ class Mp4Recorder(MDBoxLayout):
     #            wifiCheck
     # ---------------------------------------------
     def wifiCheck(self):
-        from ping3 import ping
-        # https://github.com/kyan001/ping3
-        # UP rsp : 0.016164541244506836
-        # DN rsp : None
-        rsp = ping('google.com', timeout=1)
-        return isinstance(rsp, float)
+        # https://stackoverflow.com/questions/3764291/how-can-i-see-if-theres-an-available-and-active-network-connection-in-python
+        host="8.8.8.8"  # Google's public domain server
+        port=53
+        timeout=0.5     # Half second float timeout
 
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+            s.close()
+            return True
+        except socket.error as ex:
+            #print(ex)
+            return False
+            
     # ---------------------------------------------
     #            check_wifi
     # ---------------------------------------------
@@ -307,7 +310,7 @@ class Mp4Recorder(MDBoxLayout):
 
         print(logmsg)
         
-        # Show in ScrollView, current n top.
+        # Show in ScrollView, current at top.
         txt = f'[{dt_string}] {msg}'
         self.ids.container.add_widget(OneLineListItem(text = txt),index=self.logMsgCount)
         self.logMsgCount = self.logMsgCount + 1
@@ -353,13 +356,19 @@ class Mp4Recorder(MDBoxLayout):
             self.ids.email_button.text = self.email_button_text
             msg = self.ids.email_button.text
         else:
+            fn = basename(recordFilename)
             if self.email_ok2send:
-                self.ids.email_button.text = f'''Emailing\n{recordFilename}'''
-                msg = mp4Recorder.email(recordFilename)
-                mp4Recorder.clear_mp4_filename()
-                self.ids.email_button.text = self.email_button_text
+                # Absolute wifi check, independant of 'isCheckwifi' flag.
+                if self.wifiCheck():
+                    self.ids.email_button.text = f'''Emailing\n{fn}'''
+                    msg = mp4Recorder.email(recordFilename)
+                    mp4Recorder.clear_mp4_filename()
+                    self.ids.email_button.text = self.email_button_text
+                else:
+                    self.ids.email_button.text = f'''Email\n{fn}'''
+                    msg = f'{self.emailfile_button_text} *ERROR* WiFi down, check system, try again. '
             else:
-                msg = f'{self.ids.email_button.text} ******* [WiFi DN] Cannot Email {recordFilename} ********'
+                msg = f'{self.emailfile_button_text} *ERROR* [WiFi DN] Cannot email'
 
         self.logMessage(msg)
         self.update_labels()
@@ -379,11 +388,16 @@ class Mp4Recorder(MDBoxLayout):
         # See show_load() stuff.
         # 'loadFilename' reported in timer() via update_labels() when available.
         # ------------------------------------------------------------------------
-        if self.email_ok2send:
-            self.file_choose_root.show_load()
-            msg = f'{self.ids.emailfile_button.text} File choose complete'
+        
+        # Absolute wifi check, independant of 'isCheckwifi' flag.
+        if self.wifiCheck():
+            if self.email_ok2send:
+                self.file_choose_root.show_load()
+                msg = f'{self.ids.emailfile_button.text}: File choose complete'
+            else:
+                msg = f'{self.ids.emailfile_button.text}: *[WiFi DN]* Cannot EmailFile.'
         else:
-            msg = f'******* [WiFi DN] Cannot EmailFile ********'
+            msg = f'{self.ids.emailfile_button.text}: *ERROR* WiFi down, check system, try again.'
 
         self.logMessage(msg)            
         self.update_labels()
@@ -412,7 +426,7 @@ class Mp4Recorder(MDBoxLayout):
         if self.state == 'recording':
             recordFilename = mp4Recorder.get_mp4_filename()
             basefn = basename(recordFilename)
-            self.logMessage(f'''Saving {basefn}''')
+            self.logMessage(f'Saving {basefn}')
             self.state = mp4Recorder.record(self.state)
 
         self.logMessage(self.ids.exit_button.text)
@@ -435,17 +449,14 @@ class Mp4Recorder(MDBoxLayout):
 
         # --------- Button label updates --------
         if self.state == 'ready':
-#           self.ids.record_button.background_normal = ''
             self.ids.record_button.md_bg_color = self.color_orange
             self.ids.record_button.text = self.record_button_text
 
         if self.state == 'recording':
-#           self.ids.record_button.background_normal = ''
             self.ids.record_button.md_bg_color = self.color_green
 
         # -------- Email and EmailFile updates
         if self.email_ok2send:
-
             self.ids.time_label.color = "orange"
 
             if self.state == 'recording':
@@ -491,7 +502,6 @@ class LoadDialog(FloatLayout):
     def sort_by_name(files, filesystem):
         return (sorted(f for f in files if filesystem.is_dir(f)) +
             sorted((f for f in files if not filesystem.is_dir(f) and not 'Log' in f), reverse = True))
-
 
     default_sort_func = ObjectProperty(sort_by_date)
           
@@ -540,9 +550,6 @@ class Root(FloatLayout):
         msg = ''
         try:
             loadFilename = selection[0]
-#           basefn = basename(loadFilename)
-#           print(f'================= emailfile basefn [{basefn}]=========')
-#           self.content.ids.emailfile_button.text = basefn
             if isfile(loadFilename):
                 emailFileMsg = mp4Recorder.email(loadFilename)
             else:
@@ -562,10 +569,6 @@ class Mp4RecorderApp(MDApp):
 
 Factory.register('Root', cls=Root)
 Factory.register('LoadDialog', cls=LoadDialog)
-
-# https://stackoverflow.com/questions/40090453/font-color-of-filechooser?rq=3
-
-from kivy.lang import Builder
 
 if __name__ == '__main__':
     

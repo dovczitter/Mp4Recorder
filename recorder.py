@@ -258,41 +258,49 @@ class Recorder():
         print(f'EMAIL_USERNAME |{self.EMAIL_USERNAME}|')
         print(f'EMAIL_PASSWORD |{self.EMAIL_PASSWORD}|')
         print(f'EMAIL_TO |{self.EMAIL_TO}|')
-        
-        server.login(self.EMAIL_USERNAME, self.EMAIL_PASSWORD)
-        
-        # setup payload
-        msg = MIMEMultipart()
-        msg['From'] = self.EMAIL_FROM
-        msg['To'] = ",".join(self.EMAIL_TO)
 
-        # Subject
-        msg['Subject'] = f'[{basefn}] From Mp4Recorder'
-
-        # Body
-        body = f'[{basefn}] From Mp4Recorder'
-        msg.attach(MIMEText(body, 'plain'))
-
-        # file attachment
-        attachment = open(filename, "rb")
-        p = MIMEBase('application', 'octet-stream')
-        p.set_payload((attachment).read())
-        encoders.encode_base64(p)
-        p.add_header('Content-Disposition', "attachment; filename= %s" % basefn)
-        msg.attach(p)
-        
-        #Send the mail
-        # Note max emails per day limit:
-        # https://answers.microsoft.com/en-us/outlook_com/forum/all/smtpdataerror-554-520-on-my-outlook-account/c9cd69cc-4ad0-4c30-b96f-67fc533b0603
-        
         try:
-            server.sendmail(self.EMAIL_FROM, self.EMAIL_TO, msg.as_string())
-            server.quit()        
+            server.login(self.EMAIL_USERNAME, self.EMAIL_PASSWORD)
+            
+            # setup payload
+            msg = MIMEMultipart()
+            msg['From'] = self.EMAIL_FROM
+            msg['To'] = ",".join(self.EMAIL_TO)
+
+            # Subject
+            msg['Subject'] = f'[{basefn}] From Mp4Recorder'
+
+            # Body
+            body = f'[{basefn}] From Mp4Recorder'
+            msg.attach(MIMEText(body, 'plain'))
+
+            # file attachment
+            attachment = open(filename, "rb")
+            p = MIMEBase('application', 'octet-stream')
+            p.set_payload((attachment).read())
+            encoders.encode_base64(p)
+            p.add_header('Content-Disposition', "attachment; filename= %s" % basefn)
+            msg.attach(p)
+            
+            #Send the mail
+            # Note max emails per day limit:
+            # https://answers.microsoft.com/en-us/outlook_com/forum/all/smtpdataerror-554-520-on-my-outlook-account/c9cd69cc-4ad0-4c30-b96f-67fc533b0603
+            
+            try:
+                server.sendmail(self.EMAIL_FROM, self.EMAIL_TO, msg.as_string())
+                server.quit()        
+            except Exception as error:
+                err = traceback.format_exc()
+                print(' ================================ [1] sendmail traceback START ================================ ')
+                print(err)
+                print(' ================================ [1] sendmail traceback END ================================ ')
+                return f'Email error [{basefn}] : {err}.'
+            
         except Exception as error:
             err = traceback.format_exc()
-            print(' ================================ sendmail traceback START ================================ ')
+            print(' ================================ [2] sendmail traceback START ================================ ')
             print(err)
-            print(' ================================ sendmail traceback END ================================ ')
+            print(' ================================ [2] sendmail traceback END ================================ ')
             return f'Email error [{basefn}] : {err}.'
         
         return f'Email complete [{basefn}].'
