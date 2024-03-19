@@ -48,14 +48,14 @@
             on_release: root.emailfile()                
 
         MDRaisedButton:
-            id: checkwifi_button
-            text: root.checkwifi_button_text
-            color: root.checkwifi_button_color
+            id: reset_button
+            text: root.reset_button_text
+            color: root.reset_button_color
             font_size: 24
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            on_release: root.checkwifi()                
+            on_release: root.reset()                
 
         MDRaisedButton:
             id: exit_button
