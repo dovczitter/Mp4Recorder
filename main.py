@@ -49,7 +49,7 @@ Builder.load_file('./style.kv')
 # https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
 #
 
-__version__ = 7.1
+__version__ = 7.2
 mp4Recorder = ''
 loadFilename = None
 emailFileMsg = ''
@@ -188,10 +188,8 @@ class Mp4Recorder(MDBoxLayout):
         global loadFilename
         global emailFileMsg
 
-        # -------- wifi -----------
-#       self.check_wifi()
-
         time_str = f'''[Mp4Recorder {self.mp4Version}]\n[{time.asctime()}]'''
+        wifi_str = 'WiFi is UP.' if self.wifiCheck() else 'WiFi is *DOWN*!'
         
         # -------- record -----------
         
@@ -217,7 +215,7 @@ class Mp4Recorder(MDBoxLayout):
             self.recordSeconds = 0  
             self.recordBlink = False         
 
-        self.ids.time_label.text = f'''\n{time_str}\n'''
+        self.ids.time_label.text = f'''\n{time_str}\n[{wifi_str}]\n'''
 
         if loadFilename != None:
             self.update_labels()
