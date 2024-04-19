@@ -47,6 +47,8 @@ class Recorder():
         #
         self.mp4_filename = ''
         self.mp4Fn = ''
+        self.emailfile_filename = ''
+        self.email_inprocess = False
         self.config = dict()
         self.BASE_FILENAME = ''
         self.EMAIL_USERNAME = ''
@@ -210,6 +212,18 @@ class Recorder():
         self.mp4_filename = ''
         self.mp4Fn = ''
 
+    # ----------------- get_emailfile_filename ------------------------ #
+    def get_emailfile_filename(self):
+        return self.emailfile_filename
+
+    # ----------------- set_emailfile_filename ------------------------ #
+    def set_emailfile_filename(self,filename):
+        self.emailfile_filename = filename
+
+    # ----------------- clear_emailfile_filename ------------------------ #
+    def clear_emailfile_filename(self):
+        self.emailfile_filename = ''
+
     # ----------------- get_mp4_path ------------------------ #
     def get_mp4_path(self):
         path = "/storage/emulated/0/Movies/Mp4Recorder"
@@ -232,8 +246,7 @@ class Recorder():
     # ======================
     #       email 
     # ======================
-
-    def send_email(self, filename):
+    def send_email(self, filename, result):
         import smtplib
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
@@ -242,8 +255,9 @@ class Recorder():
         from os.path import exists
 
         print(f'========= send_email: [{filename}] ==============')
-        if filename == None or not exists(filename):
-            return f' Error: [{filename}] does not exist.'
+        if filename == '' or not exists(filename):
+            result[0] = f' Error: [{filename}] does not exist.'
+            return
         
         basefn = os.path.basename(filename)
         
@@ -294,20 +308,36 @@ class Recorder():
                 print(' ================================ [1] sendmail traceback START ================================ ')
                 print(err)
                 print(' ================================ [1] sendmail traceback END ================================ ')
-                return f'Email error [{basefn}] : {err}.'
+                result[0] = f'Email error [{basefn}] : {err}.'
+                return
             
         except Exception as error:
             err = traceback.format_exc()
             print(' ================================ [2] sendmail traceback START ================================ ')
             print(err)
             print(' ================================ [2] sendmail traceback END ================================ ')
-            return f'Email error [{basefn}] : {err}.'
+            result[0] = f'Email error [{basefn}] : {err}.'
+            return
         
-        return f'Email complete [{basefn}].'
+        result[0] = f'Email complete [{basefn}].'
+        self.clear_mp4_filename()
+        self.clear_emailfile_filename()
+        return
     
     # ======== email ========
     def email(self, filename):
-        return self.send_email(filename)
+        # https://www.pythontutorial.net/python-concurrency/python-threading/
+        import threading
+        result = [None]
+        self.email_inprocess = True
+        threading.Thread(target=self.send_email, args=(filename,result,)).start()
+        return result[0]
+
+    # ======== isEmailProcess ========
+    def isEmailProcess(self):
+        return self.email_inprocess
+    def clearEmailProcess(self):
+        self.email_inprocess = False
 
     # ======================
     #       exit 

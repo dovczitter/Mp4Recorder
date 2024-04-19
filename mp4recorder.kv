@@ -33,7 +33,7 @@
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             #https://stackoverflow.com/questions/61728185/python-kivy-how-to-disable-enable-a-button
-#           disabled: True if root.state != 'ready' or root.email_ok2send == False else False
+            disabled: True if root.state != 'ready' else False
             on_release: root.email()
 
         MDRaisedButton:
@@ -44,7 +44,9 @@
             halign: "center"
             size_hint: 0.75, 0.25
             pos_hint: {'center_x':0.5, 'center_y':0.5}
-            disabled: True if root.state != 'ready' else False
+            # https://www.educative.io/answers/how-to-disable-and-enable-a-button-in-kivy
+#           disabled: True if root.state != 'ready' else False
+#           disabled: True if root.disableEmailfileButton() else False
             on_release: root.emailfile()                
 
         MDRaisedButton:
@@ -91,13 +93,16 @@
 
         MDBoxLayout:
             height: 20
+            orientation:'horizontal'
+            spacing: "20dp"
 
             MDRaisedButton:
                 id: emailfile_button
-                text: "EmailFile"
+#                text: root.emailfile_button_text_property
+                text: 'Email File'
                 size_hint: 0.5, 0.20
                 font_size: 24
-                on_release: root.emailfile(filechooser.path, filechooser.selection)
+                on_release: root.emailfile(filechooser.path, filechooser.selection, root)
                 
             MDRaisedButton:
                 id: cancel_button

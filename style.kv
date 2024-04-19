@@ -240,6 +240,14 @@
 
 
 <TreeViewNode>:
+
+    # --------------
+    # CHANGE FONT COLOR
+    # --------------
+#   even_color: 0.5,0.1,0.1,1 # red
+    even_color: 0.1,0.1,0.5,1 # blue
+    odd_color: 0.1,0.1,0.5,1  # blue 
+
     canvas.before:
         Color:
             rgba: self.color_selected if self.is_selected else self.odd_color if self.odd else self.even_color
@@ -284,6 +292,7 @@
     on_entries_cleared: treeview.root.nodes = []
     on_subentry_to_entry: not args[2].locked and treeview.add_node(args[1], args[2])
     on_remove_subentry: args[2].nodes = []
+    
     BoxLayout:
         pos: root.pos
         size: root.size
@@ -386,6 +395,7 @@
 #            even_color: 0.5,0.1,0.1,1
 #            odd_color: 0.1,0.1,0.5,1
 #            bold: True
+#            bold: True if is_selected else False
             font_size: '24dp'                                  # adjust this font size
             size_hint_x: None
             width: root.width - sz.width                       # this allows filename Label to fill width less size Label
@@ -402,6 +412,7 @@
 #            even_color: 0.5,0.1,0.1,1
 #            odd_color: 0.1,0.1,0.5,1
 #            bold: True
+#            bold: True if is_selected else False
             font_size: '24dp'                                  # adjust this font size
             size_hint_x: None
             width: self.texture_size[0]                        # this makes the size Label to minimum width

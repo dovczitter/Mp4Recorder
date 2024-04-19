@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 from os.path import basename, isfile
 from jnius import autoclass
 from recorder import Recorder
+from kivy import platform
+from kivy.event import EventDispatcher
 
 import socket
 
@@ -35,24 +37,11 @@ Builder.load_file('./style.kv')
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
 
-# =========== WIP how to keep kivy android screen on python example
-# =========== WIP : https://stackoverflow.com/questions/63218114/how-to-keep-kivy-service-running-in-background-in-android-service-still-run-whe
-# =========== WIP see: \\wsl.localhost\Ubuntu\home\dovczitter\Mp4Recorder\.buildozer\android\platform\build-armeabi-v7a\dists\mp4recorderapp\jni\SDL\android-project\app\src\main\AndroidManifest.xml
-
-# See buildozer : #android.activity_class_name = org.kivy.android.PythonActivity
-#
-
-# camera: https://kivy.org/doc/stable/examples/gen__camera__main__py.html
-# video recorder: https://stackoverflow.com/questions/62063847/is-there-a-way-to-record-videos-in-kivy
-# https://www.programcreek.com/python/?code=codelv%2Fenaml-native%2Fenaml-native-master%2Fsrc%2Fenamlnative%2Fandroid%2Fapp.py#
-
-# https://www.geeksforgeeks.org/how-to-keep-the-device-screen-on-in-android/
-#
-
-__version__ = 7.2
+__version__ = 8.0
 mp4Recorder = ''
-loadFilename = None
 emailFileMsg = ''
+emilFileCancelMsg = f'EmailFile was CANCELED'
+
 # Note: 'LoadDialog' filters listing with 'Log' in filename
 log_root_filename = 'Mp4Recorder'
 
@@ -73,17 +62,9 @@ class Mp4Recorder(MDBoxLayout):
 
         global __version__
         global mp4Recorder
-        global loadFilename
         global emailFileMsg
-        
-        self.logMsgCount = 0
 
-        # WIP:
-        # https://search.yahoo.com/yhs/search?hspart=mnet&hsimp=yhs-001&type=type9085796-spa-3537-84480&param1=3537&param2=84480&p=kivy+android+not+changing+button+color+python
-        #  https://www.geeksforgeeks.org/change-button-color-in-kivy/
-        # good: https://www.youtube.com/watch?v=2IuAQ1HUpU4
-        # color code picker: https://htmlcolorcodes.com/
-        #                    https://htmlcolorcodes.com/color-names/
+        self.logMsgCount = 0
 
         self.color_red    = get_color_from_hex('#ff0000')
         self.color_orange = get_color_from_hex('#fbb800')
@@ -100,20 +81,20 @@ class Mp4Recorder(MDBoxLayout):
         self.time_label_text = '00:00:00'
         self.record_button_text = 'START Recording'
         self.email_button_text = 'Email [No recording to email]'
-        self.emailfile_button_text = 'Email File'
+        self.emailfile_button_text = 'EmailFile'
         self.reset_button_text = 'Reset'
         self.exit_button_text = 'Exit'
 
         self.resetBlink = False
         self.recordBlink = False
-        self.recordFilename = ''
         self.recordSeconds = 0
+        self.timeSeconds = 0
         self.mp4Version = __version__
         self.logFp = None
         self.permissions_external_storage_complete = False
         
         super(Mp4Recorder, self).__init__(**kwargs)
-       
+
         #
         # 'request_permissions' first, waits in background until 'permissions_external_storage'
         # is complete. Then allows for the request respons, then continues with kivy. 
@@ -130,6 +111,7 @@ class Mp4Recorder(MDBoxLayout):
         mp4Recorder = Recorder()
 
         self.state = 'ready'
+        self.ids.emailfile_button.disabled = False
 
         self.time_started = False
         
@@ -179,31 +161,46 @@ class Mp4Recorder(MDBoxLayout):
                     currentActivity.startActivityForResult(intent, 101) 
 
         self.permissions_external_storage_complete = True
-                    
+
     # ---------------------------------------------
     #                   timer
     # ---------------------------------------------
     def timer(self, *args):
         global mp4Recorder
-        global loadFilename
         global emailFileMsg
+        global emilFileCancelMsg
 
+        isWifi = self.wifiCheck()
         time_str = f'''[Mp4Recorder {self.mp4Version}]\n[{time.asctime()}]'''
-        wifi_str = 'WiFi is UP.' if self.wifiCheck() else 'WiFi is *DOWN*!'
-        
+        wifi_str = 'WiFi is UP' if isWifi else 'WiFi is !*DOWN*!'
+        self.ids.time_label.text = f'''\n{time_str}\n[{wifi_str}]\n'''
+
+        email_text = self.email_button_text if isWifi else 'Email - wifi *DOWN*'
+        emailfile_text = self.emailfile_button_text if isWifi else 'EmailFile - wifi *DOWN*'
+
+        if self.state != 'ready':
+            self.ids.emailfile_button.disabled = True
+
+        # Handle a cancelled EmailFile notification
+        if emailFileMsg == emilFileCancelMsg:
+            emailFileMsg = ''
+            mp4Recorder.clear_emailfile_filename()
+            self.logMessage('EmailFile was CANCELLED')
+
         # -------- record -----------
-        
         if self.state == 'recording':
             # Regular time convert routines generate timezone issues
             # Decided to do this with simple per second math.
             self.recordSeconds = self.recordSeconds + 1
-            
             hrs = int(self.recordSeconds / 3600)
             min = int(self.recordSeconds / 60)
             sec = int(self.recordSeconds - (hrs*3600 + min*60))
             
             RecordingTime = f'{hrs:02d}:{min:02d}:{sec:02d}'
             self.ids.record_button.text = f'''STOP Recording [{RecordingTime}]\n{mp4Recorder.get_mp4_filename()}'''
+
+            self.ids.email_button.text = email_text
+            self.ids.emailfile_button.text = emailfile_text
 
             if self.recordBlink:
                 self.recordBlink = False
@@ -213,12 +210,32 @@ class Mp4Recorder(MDBoxLayout):
                 self.ids.record_button.md_bg_color = self.color_orange
         else:
             self.recordSeconds = 0  
-            self.recordBlink = False         
+            self.recordBlink = False 
 
-        self.ids.time_label.text = f'''\n{time_str}\n[{wifi_str}]\n'''
+            mp4FileName = mp4Recorder.get_mp4_filename()
+            emailFileName = mp4Recorder.get_emailfile_filename()
 
-        if loadFilename != None:
-            self.update_labels()
+            if mp4FileName != '':
+                baseFn = basename(mp4FileName)
+                if mp4Recorder.isEmailProcess():
+                    self.ids.email_button.text = f'''Email ...Sending... :\n[{baseFn}]'''
+                else:
+                    self.ids.email_button.text = f'''Email :\n[{baseFn}]'''
+
+            elif emailFileName != '':
+                baseFn = basename(emailFileName)
+                self.ids.emailfile_button.text = f'''EmailFile ...Sending... :\n[{baseFn}]'''
+
+            else:
+                self.ids.email_button.disabled = False
+                self.ids.email_button.text = email_text
+
+                self.ids.emailfile_button.disabled = False
+                self.ids.emailfile_button.text = emailfile_text
+
+                mp4Recorder.clearEmailProcess()
+
+        self.update_labels()
 
     # ---------------------------------------------
     #            start_time
@@ -233,7 +250,6 @@ class Mp4Recorder(MDBoxLayout):
         # https://stackoverflow.com/questions/3764291/how-can-i-see-if-theres-an-available-and-active-network-connection-in-python
         host="8.8.8.8"  # Google's public domain server
         port=53
-        timeout=0.5     # Half second float timeout
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -255,8 +271,8 @@ class Mp4Recorder(MDBoxLayout):
 
         if self.logFp == None:
             # Note, dt_tag is valid per install, a re-install would clear cache file.
-            # Use HMS for re-install case. 
-#           dt_tag = now.strftime("%d%b%Y")
+            # Use HMS for next day re-install case. 
+            # dt_tag = now.strftime("%d%b%Y")
             dt_tag = now.strftime("%d%b%Y_%H%M%S")
             log_filename = f'{log_root_filename}_{dt_tag}.log'
             self.LogPath = log_filename
@@ -291,7 +307,7 @@ class Mp4Recorder(MDBoxLayout):
     def record(self):
         global mp4Recorder
 
-        # 'record() will toggle state from 'ready' to 'recording' to 'ready'
+        # 'mp4Recorder.record() will toggle state from 'ready' to 'recording' to 'ready'
 
         old_fn = mp4Recorder.get_mp4_filename()
         old_basefn = basename(old_fn)
@@ -322,28 +338,36 @@ class Mp4Recorder(MDBoxLayout):
             self.update_labels()
             return
 
-        recordFilename = mp4Recorder.get_mp4_filename()
-        if recordFilename == '':
-            self.ids.email_button.text = self.email_button_text
+        mp4FileName = mp4Recorder.get_mp4_filename()
+        if mp4FileName == '':
+            self.ids.email_button.text = f'{self.email_button_text} NO recording to email'
             msg = self.ids.email_button.text
         else:
-            fn = basename(recordFilename)
+            fn = basename(mp4FileName)
             if self.wifiCheck():
-                self.ids.email_button.text = f'''Sending...\n{fn}'''
-                msg = mp4Recorder.email(recordFilename)
-                mp4Recorder.clear_mp4_filename()
-                self.ids.email_button.text = self.email_button_text
+                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                mp4Recorder.email(mp4FileName)
+                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
+                # timer() will update emil button 
             else:
-                self.ids.email_button.text = f'''Email - wifi down\n{fn}'''
+                self.ids.email_button.text = f'''Email - wifi was down,try again.\n{fn}'''
                 msg = f'{self.emailfile_button_text} *ERROR* WiFi down, check system, try again. '
 
-        self.logMessage(msg)
+        if msg != '':
+            self.logMessage(msg)
         self.update_labels()
 
     # ---------------------------------------------
     #            emailfile
     # ---------------------------------------------
     def emailfile(self):
+        global emailFileMsg
+        global mp4Recorder
+
         msg = ''
         if self.state != 'ready':
             self.logMessage(f'{self.ids.emailfile_button.text} Recording in progress.')
@@ -353,38 +377,70 @@ class Mp4Recorder(MDBoxLayout):
         # ------------------------------------------------------------------------
         # Root emailfile class will do the actual filechoose and email.
         # See show_load() stuff.
-        # 'loadFilename' reported in timer() via update_labels() when available.
+        # 'emilfileName' reported in timer() via update_labels() when available.
         # ------------------------------------------------------------------------
         
+        # Prevent multi EmailFile button hits while sending large files.
+        emailFileName = mp4Recorder.get_emailfile_filename()
+        if emailFileName != '':
+            self.logMessage(f'{self.ids.emailfile_button.text} EmailFile in progress.')
+            self.update_labels()
+            return
+            
         # Absolute wifi check.
         if self.wifiCheck():
+            emailFileMsg = ''
+            # timer() will update email and emailfile buttons.
+            # 'emailFileName' is set in show_load()
+            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
+            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
+            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
             self.file_choose_root.show_load()
-            msg = f'{self.ids.emailfile_button.text}: File choose complete'
+            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
+            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
+            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
         else:
-            self.ids.emailfile_button.text = 'EmailFile - wifi down'
-            msg = f'EmailFile *ERROR*: WiFi down, check system, try again.'
+            msg = f'{self.ids.emailfile_button.text}: Wifi is DOWN'
 
-        self.logMessage(msg)            
+        if msg != '':
+            self.logMessage(msg)            
         self.update_labels()
 
     # ---------------------------------------------
     #            reset
     # ---------------------------------------------
     def reset(self):
+        global emailFileMsg
+        global isEmailFile
+        global mp4Recorder
 
-        if self.state != 'ready':
+        if self.state == 'recording':
             # Issue a STOP recording.
             self.record()
+
+        emailFileMsg = ''
+        isEmailFile = False
+        self.timeSeconds = 0
+        mp4Recorder.clear_emailfile_filename()
+        mp4Recorder.clear_mp4_filename()
+        mp4Recorder.clearEmailProcess()
 
         self.ids.record_button.text = self.record_button_text
         self.ids.email_button.text = self.email_button_text
         self.ids.emailfile_button.text = self.emailfile_button_text
         self.ids.reset_button.text = self.reset_button_text
         self.ids.exit_button.text = self.exit_button_text
-        wifichk = 'UP.' if self.wifiCheck() else '*DOWN*!'
+        
+        self.ids.record_button.disabled = False
+        self.ids.email_button.disabled = False
+        self.ids.emailfile_button.disabled = False
+        self.ids.reset_button.disabled = False
+        self.ids.exit_button.disabled = False   
+           
+        wifichk = 'UP' if self.wifiCheck() else '!*DOWN*!'
         self.logMessage(f'Reset complete, wifi is {wifichk}')            
         self.update_labels()
-
+        
     # ---------------------------------------------
     #            exit
     # ---------------------------------------------
@@ -392,8 +448,8 @@ class Mp4Recorder(MDBoxLayout):
         global mp4Recorder
 
         if self.state == 'recording':
-            recordFilename = mp4Recorder.get_mp4_filename()
-            basefn = basename(recordFilename)
+            mp4FileName = mp4Recorder.get_mp4_filename()
+            basefn = basename(mp4FileName)
             self.logMessage(f'Saving {basefn}')
             self.state = mp4Recorder.record(self.state)
 
@@ -401,18 +457,12 @@ class Mp4Recorder(MDBoxLayout):
         # Close logfile.
         self.logFp.close()
         mp4Recorder.file_copy(self.LogPath)
-        mp4Recorder.exit()
-
+        quit()
+        
     # ---------------------------------------------
     #            update_labels
     # ---------------------------------------------
     def update_labels(self):
-        global mp4Recorder
-        global loadFilename
-        global emailFileMsg
-
-        recordFilename = mp4Recorder.get_mp4_filename()
-        basefn = basename(recordFilename)
 
         # --------- Button label updates --------
         if self.state == 'ready':
@@ -422,13 +472,6 @@ class Mp4Recorder(MDBoxLayout):
         if self.state == 'recording':
             self.ids.record_button.md_bg_color = self.color_green
 
-        if loadFilename != None: 
-            basefn = basename(loadFilename)
-            end_msg = f'[Email File Complete : {basefn}] '
-            self.logMessage(end_msg)
-            # NOTE - clear local loadFilename, generates only one update per load.
-            loadFilename = None
-            
 # =============================================
 #               LoadDialog
 # =============================================
@@ -459,7 +502,7 @@ class LoadDialog(FloatLayout):
 #            Root
 # =============================================
 class Root(FloatLayout):
-    
+
     def __init__(self, **kwargs):
         super(Root, self).__init__(**kwargs)
         self.content = None
@@ -475,10 +518,9 @@ class Root(FloatLayout):
     # ---------------------------------------------
     def show_load(self):
         global mp4Recorder
-        global loadFilename
         global emailFileMsg
 
-        self.content = LoadDialog(emailfile=self.emailfile, cancel=self.dismiss_popup)
+        self.content = LoadDialog(emailfile=self.emailfile, cancel=self.cancel)
         print(f'=========== show_load path [{mp4Recorder.get_mp4_path()}] ==========')
         self.content.ids.filechooser.path = mp4Recorder.get_mp4_path()
 
@@ -488,22 +530,36 @@ class Root(FloatLayout):
     # ---------------------------------------------
     #            emailfile
     # ---------------------------------------------
-    def emailfile(self, path, selection):
-        global mp4Recorder
-        global loadFilename
+    def emailfile(self, path, selection, root):
         global emailFileMsg
+        global mp4Recorder
                 
-        msg = ''
         try:
-            loadFilename = selection[0]
-            if isfile(loadFilename):
-                emailFileMsg = mp4Recorder.email(loadFilename)
-            else:
-                emailFileMsg = f'Email File error, file [{loadFilename}] does not exist'
+            emailFileName = selection[0]
+            if isfile(emailFileName):
+                emailFileMsg = f'EmailFile [{emailFileName}] exists'
+                print(f'-------------------- Root emailfile(): [{emailFileName}]')
+                mp4Recorder.set_emailfile_filename(emailFileName)
+                mp4Recorder.email(emailFileName)
+                # timer() will clear emailFileName and isEmailFile
+            else:            
+                emailFileMsg = f'EmailFile error, file [{emailFileName}] does not exist'
+                mp4Recorder.clear_emailfile_filename()
             self.dismiss_popup()
         except:
             pass
-    
+
+    # ---------------------------------------------
+    #            cancel
+    # ---------------------------------------------
+    def cancel(self):
+        global emailFileMsg
+        global emilFileCancelMsg
+
+        emailFileMsg = emilFileCancelMsg
+
+        self.dismiss_popup()
+
 # =============================================
 #            Mp4RecorderApp
 # =============================================
@@ -515,6 +571,11 @@ class Mp4RecorderApp(MDApp):
 
 Factory.register('Root', cls=Root)
 Factory.register('LoadDialog', cls=LoadDialog)
+
+###################################################################
+# https://github.com/asyncgui/asynckivy/blob/main/examples/wait_for_a_thread_to_complete.py
+#
+# WIP: https://gist.github.com/el3/3c8d4e127d41e86ca3f2eae94c25c15f
 
 if __name__ == '__main__':
     
