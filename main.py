@@ -2,7 +2,7 @@ from kivymd.app import MDApp
 from kivy.clock import Clock
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.uix.scrollview import ScrollView
-from kivymd.uix.list import MDList, OneLineListItem, TwoLineListItem
+from kivymd.uix.list import MDList, OneLineListItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty
@@ -13,12 +13,11 @@ from kivymd.color_definitions import colors
 from kivy.lang import Builder
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from os.path import basename, isfile
 from jnius import autoclass
 from recorder import Recorder
 from kivy import platform
-from kivy.event import EventDispatcher
 
 import socket
 
@@ -37,9 +36,11 @@ Builder.load_file('./style.kv')
 # ----------------- NOTE NOTE NOTE -------------------
 # ----------------- NOTE NOTE NOTE -------------------
 
-__version__ = 8.0
+__version__ = 8.2
 mp4Recorder = ''
 emailFileMsg = ''
+emailFileSentFn = ''
+emailSentFn = ''
 emilFileCancelMsg = f'EmailFile was CANCELED'
 
 # Note: 'LoadDialog' filters listing with 'Log' in filename
@@ -91,7 +92,6 @@ class Mp4Recorder(MDBoxLayout):
         self.timeSeconds = 0
         self.mp4Version = __version__
         self.logFp = None
-        self.permissions_external_storage_complete = False
         
         super(Mp4Recorder, self).__init__(**kwargs)
 
@@ -99,7 +99,19 @@ class Mp4Recorder(MDBoxLayout):
         # 'request_permissions' first, waits in background until 'permissions_external_storage'
         # is complete. Then allows for the request respons, then continues with kivy. 
         print('========== BEFORE init request_permissions ==============')
-        request_permissions([Permission.RECORD_AUDIO, Permission.ACCESS_WIFI_STATE, Permission.INTERNET])
+#       request_permissions([Permission.RECORD_AUDIO, Permission.ACCESS_WIFI_STATE, Permission.INTERNET])
+
+#        request_permissions([
+#            Permission.RECORD_AUDIO,
+#            Permission.ACCESS_WIFI_STATE,
+#            Permission.INTERNET,
+#            Permission.CHANGE_WIFI_STATE,
+#            Permission.ACCESS_FINE_LOCATION,
+#            Permission.ACCESS_COARSE_LOCATION,
+#            Permission.ACCESS_NETWORK_STATE
+#            ])
+        request_permissions([Permission.RECORD_AUDIO,Permission.ACCESS_WIFI_STATE,Permission.INTERNET,Permission.NEARBY_WIFI_DEVICES,Permission.CHANGE_WIFI_STATE,Permission.CHANGE_NETWORK_STATE,Permission.CHANGE_WIFI_MULTICAST_STATE,Permission.ACCESS_FINE_LOCATION,Permission.ACCESS_COARSE_LOCATION,Permission.ACCESS_NETWORK_STATE])
+
         print('========== AFTER  init request_permissions ==============')
       
         # https://programtalk.com/vs4/python/adywizard/car-locator/main.py/
@@ -160,8 +172,6 @@ class Mp4Recorder(MDBoxLayout):
                     )
                     currentActivity.startActivityForResult(intent, 101) 
 
-        self.permissions_external_storage_complete = True
-
     # ---------------------------------------------
     #                   timer
     # ---------------------------------------------
@@ -169,6 +179,8 @@ class Mp4Recorder(MDBoxLayout):
         global mp4Recorder
         global emailFileMsg
         global emilFileCancelMsg
+        global emailFileSentFn
+        global emailSentFn
 
         isWifi = self.wifiCheck()
         time_str = f'''[Mp4Recorder {self.mp4Version}]\n[{time.asctime()}]'''
@@ -219,19 +231,28 @@ class Mp4Recorder(MDBoxLayout):
                 baseFn = basename(mp4FileName)
                 if mp4Recorder.isEmailProcess():
                     self.ids.email_button.text = f'''Email ...Sending... :\n[{baseFn}]'''
+                    emailFileSentFn = baseFn
                 else:
                     self.ids.email_button.text = f'''Email :\n[{baseFn}]'''
 
             elif emailFileName != '':
                 baseFn = basename(emailFileName)
                 self.ids.emailfile_button.text = f'''EmailFile ...Sending... :\n[{baseFn}]'''
-
+                emailSentFn = baseFn
             else:
                 self.ids.email_button.disabled = False
                 self.ids.email_button.text = email_text
 
                 self.ids.emailfile_button.disabled = False
                 self.ids.emailfile_button.text = emailfile_text
+
+                if emailFileSentFn != '':
+                    self.logMessage(f'''EmailFile *SENT*, [{emailFileSentFn}].''')
+                    emailFileSentFn = ''
+
+                if emailSentFn != '':
+                    self.logMessage(f'''Email *SENT*, [{emailSentFn}].''')
+                    emailSentFn = ''
 
                 mp4Recorder.clearEmailProcess()
 
@@ -345,14 +366,8 @@ class Mp4Recorder(MDBoxLayout):
         else:
             fn = basename(mp4FileName)
             if self.wifiCheck():
-                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
-                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
-                print(f'###### ------------- BEFORE mp4Recorder.email({mp4FileName}) -----------------------------------------')
                 mp4Recorder.email(mp4FileName)
-                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
-                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
-                print(f'###### ------------- AFTER  mp4Recorder.email({mp4FileName}) -----------------------------------------')
-                # timer() will update emil button 
+                # timer() will update email button text
             else:
                 self.ids.email_button.text = f'''Email - wifi was down,try again.\n{fn}'''
                 msg = f'{self.emailfile_button_text} *ERROR* WiFi down, check system, try again. '
@@ -392,13 +407,7 @@ class Mp4Recorder(MDBoxLayout):
             emailFileMsg = ''
             # timer() will update email and emailfile buttons.
             # 'emailFileName' is set in show_load()
-            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
-            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
-            print(f'###### -------------------- emailfile(): Before self.file_choose_root.show_load() --------------------')
             self.file_choose_root.show_load()
-            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
-            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
-            print(f'###### -------------------- emailfile(): After self.file_choose_root.show_load() --------------------')
         else:
             msg = f'{self.ids.emailfile_button.text}: Wifi is DOWN'
 
@@ -407,9 +416,56 @@ class Mp4Recorder(MDBoxLayout):
         self.update_labels()
 
     # ---------------------------------------------
+    #            wifi_connect, ***NG** android does not see 'nmcli'
+    # ---------------------------------------------
+#    def wifi_connect(self):
+#        # https://stackoverflow.com/questions/54479347/simplest-way-to-connect-wifi-python
+#        import subprocess
+#
+#        def what_wifi(self):
+#            process = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi'], stdout=subprocess.PIPE)
+#            if process.returncode == 0:
+#                return process.stdout.decode('utf-8').strip().split(':')[1]
+#            else:
+#                return ''
+#
+#        def is_connected_to(self,ssid: str):
+#            return what_wifi() == ssid
+#
+#        def scan_wifi(self):
+#            process = subprocess.run(['nmcli', '-t', '-f', 'SSID,SECURITY,SIGNAL', 'dev', 'wifi'], stdout=subprocess.PIPE)
+#            if process.returncode == 0:
+#                return process.stdout.decode('utf-8').strip().split('\n')
+#            else:
+#                return []
+#                
+#        def is_wifi_available(self,ssid: str):
+#            return ssid in [x.split(':')[0] for x in scan_wifi()]
+#
+#        def connect_to(self,ssid: str, password: str):
+#            if not is_wifi_available(ssid):
+#                return False
+#            subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid, 'password', password])
+#            return is_connected_to(ssid)
+#
+#        def connect_to_saved(self,ssid: str):
+#            if not is_wifi_available(ssid):
+#                return False
+#            subprocess.call(['nmcli', 'c', 'up', ssid])
+#            return is_connected_to(ssid)
+#        
+#        my_wifi = what_wifi(self)
+#        print(f'################### my_wifi [{my_wifi}] ###################')
+#        self.logMessage(f'my_wifi [{my_wifi}]') 
+
+    # ---------------------------------------------
     #            reset
     # ---------------------------------------------
     def reset(self):
+
+#        from wifidroid.wifi import WifiManager
+#        import traceback
+
         global emailFileMsg
         global isEmailFile
         global mp4Recorder
@@ -417,6 +473,54 @@ class Mp4Recorder(MDBoxLayout):
         if self.state == 'recording':
             # Issue a STOP recording.
             self.record()
+
+# ################ WIP ##################
+# ################ WIP ##################
+        # WIP: reset wifi https://github.com/yaxter/wifidroid
+        # esp32 : https://www.youtube.com/watch?v=VnfX9YJbaU8
+        # https://stackoverflow.com/questions/7221712/cant-set-wificonfiguration-when-enabling-wifi-hotspot-using-setwifiapenabled#:~:text=Before%20Invoking%20the%20Method%20%22setWifiApEnabled%22%20you%20need%20to,the%20modified%20WifiConfiguration%20and%20after%20that%20call%20%22setWifiApEnabled%22
+        
+        # WIP: https://stackoverflow.com/questions/54479347/simplest-way-to-connect-wifi-python
+        
+        # https://developer.android.com/reference/android/net/wifi/WifiManager
+        #wifi = WifiManager()
+#        wifi.EnabledWifi(True)
+
+        # Cannot call instance method b'setWifiEnabled' on class b'android/net/wifi/WifiManager'
+        # WIP - https://stackoverflow.com/questions/7221712/cant-set-wificonfiguration-when-enabling-wifi-hotspot-using-setwifiapenabled#:~:text=Before%20Invoking%20the%20Method%20%22setWifiApEnabled%22%20you%20need%20to,the%20modified%20WifiConfiguration%20and%20after%20that%20call%20%22setWifiApEnabled%22
+#       wifi.EnabledWifi(True)
+
+#        print(f'############## before reconnect() ####################')
+#        wifi.reconnect()
+#        print(f'############## after reconnect() ####################')
+
+        # https://www.geeksforgeeks.org/wifimanager-in-android/
+#        PythonActivity = autoclass("org.kivy.android.PythonActivity")
+#        Intent = autoclass("android.content.Intent")
+#        Settings = autoclass("android.provider.Settings")
+#        try:
+#            from typing import cast
+#            intent = Intent(Settings.WIFI_SERVICE)
+#            currentActivity = cast(
+#            "android.app.Activity", PythonActivity.mActivity
+#            )
+#            currentActivity.startActivityForResult(intent, 101)
+#        except Exception as error:
+#            print(f'############## failed to WIFI_SERVICE ####################')
+#            err = traceback.format_exc()
+#            print(' ================================ traceback START ================================ ')
+#            print(err)
+#            print(' ================================ traceback END ================================ ')
+#
+#        wifi = WifiManager()
+#
+#        print(f'############## before setWifiEnabled() ####################')
+#        wifi.setWifiEnabled(True)
+#        print(f'############## after setWifiEnabled() ####################')
+#
+#        self.logMessage(f'WIFI Reset complete ') 
+# ################ WIP ##################
+# ################ WIP ##################
 
         emailFileMsg = ''
         isEmailFile = False

@@ -46,7 +46,9 @@ version.filename = %(source.dir)s/main.py
 #requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg
 #requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,tqdm
 #requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,aiosmtplib
-requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,thread
+#requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,thread
+#requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,thread,nmcli
+requirements = python3,kivy,kivymd,jnius,android,plyer,pydub,ffmpeg,thread,wifidroid
 # ============================================================================================
 
 # (str) Custom source folders for requirements
@@ -106,6 +108,7 @@ fullscreen = 0
 # ============================================================================================
 # (list) Permissions
 android.permissions = INTERNET, RECORD_AUDIO, WAKE_LOCK, MANAGE_EXTERNAL_STORAGE, ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION,ACCESS_WIFI_STATE
+
 # ============================================================================================
 
 # (list) features (adds uses-feature -tags to manifest)
